@@ -44,6 +44,7 @@ namespace zstl
                 str_ = tmp;
             }
         }
+
         // 析构函数
         ~string()
         {
@@ -59,7 +60,6 @@ namespace zstl
             std::swap(capacity_, s.capacity_);
             std::swap(str_, s.str_);
         }
-
     private:
         size_t size_;     // 当前大小
         size_t capacity_; // 当前容量
