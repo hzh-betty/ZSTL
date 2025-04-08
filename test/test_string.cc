@@ -1,0 +1,161 @@
+// test_string.cpp
+#include "../source/string.hpp" // 包含你实现的 string 类所在的头文件
+#include <sstream>              // 用于测试流输入输出
+#include "gtest/gtest.h"        // 包含 Google Test 的头文件
+
+using zstl::string; // 使用命名空间中的 string 类
+
+// 测试默认构造函数
+TEST(StringTest, DefaultConstructor)
+{
+    string s;
+    EXPECT_TRUE(s.empty());      // 应该为空
+    EXPECT_EQ(s.size(), 0u);     // 长度为 0
+    EXPECT_STREQ(s.c_str(), ""); // C字符串为空串
+}
+
+// 测试通过 C 字符串构造
+TEST(StringTest, CStrConstructor)
+{
+    string s("hello");
+    EXPECT_FALSE(s.empty());
+    EXPECT_EQ(s.size(), 5u);
+    EXPECT_STREQ(s.c_str(), "hello");
+}
+
+// 测试拷贝构造函数
+TEST(StringTest, CopyConstructor)
+{
+    string s1("world");
+    string s2(s1);
+    EXPECT_EQ(s1, s2); // 依赖于重载的 operator== 比较内容是否相同
+}
+
+// 测试赋值运算符（使用传值实现复制并交换）
+TEST(StringTest, AssignmentOperator)
+{
+    string s1("hello");
+    string s2;
+    s2 = s1;
+    EXPECT_EQ(s1, s2);
+
+    // 修改原串，测试深拷贝是否生效
+    s1 += " world";
+    EXPECT_NE(s1, s2);
+}
+
+// 测试 push_back 和 append 成员函数
+TEST(StringTest, PushBackAndAppend)
+{
+    string s;
+    s.push_back('a');
+    EXPECT_EQ(s.size(), 1u);
+    EXPECT_STREQ(s.c_str(), "a");
+
+    s.append("bc");
+    EXPECT_EQ(s.size(), 3u);
+    EXPECT_STREQ(s.c_str(), "abc");
+}
+
+// 测试 operator+= 重载支持追加字符和 C 字符串
+TEST(StringTest, OperatorPlusEqual)
+{
+    string s("go");
+    s += "od"; // 追加字符串
+    EXPECT_EQ(s.size(), 4u);
+    EXPECT_STREQ(s.c_str(), "good");
+
+    s += '!';
+    EXPECT_EQ(s.size(), 5u);
+    EXPECT_STREQ(s.c_str(), "good!");
+}
+
+// 测试 reserve 和 resize 成员函数
+TEST(StringTest, ReserveAndResize)
+{
+    string s("test");
+    size_t oldCap = s.capacity();
+    s.reserve(50);
+    EXPECT_GE(s.capacity(), 50u);
+
+    // 调整大小，扩充时填充指定字符，比如这里填充 'x'
+    s.resize(6, 'x');
+    EXPECT_EQ(s.size(), 6u);
+    // 检查前四个字符保持不变，后两个填充 'x'
+    EXPECT_EQ(s.c_str()[0], 't');
+    EXPECT_EQ(s.c_str()[1], 'e');
+    EXPECT_EQ(s.c_str()[2], 's');
+    EXPECT_EQ(s.c_str()[3], 't');
+    EXPECT_EQ(s.c_str()[4], 'x');
+    EXPECT_EQ(s.c_str()[5], 'x');
+    EXPECT_STREQ(s.c_str(), "testxx");
+}
+
+// 测试 find 成员函数寻找单个字符及子串
+TEST(StringTest, Find)
+{
+    string s("Hello, world!");
+    size_t pos = s.find('w');
+    EXPECT_NE(pos, (size_t)-1);
+    EXPECT_EQ(s[pos], 'w');
+
+    size_t pos2 = s.find("world");
+    EXPECT_NE(pos2, (size_t)-1);
+}
+
+// 测试 substr 成员函数返回子串
+TEST(StringTest, Substr)
+{
+    string s("Hello, world!");
+    string sub = s.substr(7, 5); // 应该返回 "world"
+    EXPECT_STREQ(sub.c_str(), "world");
+}
+
+// 测试 insert 和 erase 成员函数
+TEST(StringTest, InsertAndErase)
+{
+    string s("Hell world");
+    s.insert(4, 'o'); // 在位置4插入 'o'，使其变为 "Hello world"
+    EXPECT_STREQ(s.c_str(), "Hello world");
+
+    s.erase(5, 1); // 删除位置5的空格，结果为 "Helloworld"
+    EXPECT_STREQ(s.c_str(), "Helloworld");
+}
+
+// 测试 front、back 和 pop_back 成员函数
+TEST(StringTest, FrontBackPop)
+{
+    string s("abc");
+    EXPECT_EQ(s.front(), 'a');
+    EXPECT_EQ(s.back(), 'c');
+
+    s.pop_back();
+    EXPECT_EQ(s.size(), 2u);
+    EXPECT_STREQ(s.c_str(), "ab");
+}
+
+// 测试流输入输出操作符（<< 与 >>）
+TEST(StringTest, StreamOperators)
+{
+    std::string s("streamTest");
+    std::stringstream ss;
+    
+    // 测试输出流
+    ss << s;
+    std::string s2;
+    
+    // 重置流状态和位置指针
+    ss.clear();                 // 清除流的错误标志
+    ss.seekg(0, std::ios::beg); // 将位置指针移动到流的开头
+    
+    // 测试输入流
+    ss >> s2;
+    EXPECT_STREQ(s2.c_str(), "streamTest");
+}
+
+// main 函数，运行所有测试
+int main(int argc, char **argv)
+{
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
+}
