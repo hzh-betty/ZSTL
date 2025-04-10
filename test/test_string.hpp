@@ -135,22 +135,13 @@ TEST(StringTest, FrontBackPop)
 // 测试流输入输出操作符（<< 与 >>）
 TEST(StringTest, StreamOperators)
 {
-    // 模拟输入：构造一个 istringstream 对象，输入字符串设定为 "HelloWorld"
     std::istringstream inputStream("HelloWorld");
     zstl::string s;
-    inputStream >> s;  // 利用重载的 >> 运算符，从流中读取数据到 s
+    
+    inputStream >> s;  
     EXPECT_STREQ(s.c_str(), "HelloWorld") << "输入运算符 >> 读取数据错误";
 
-    // 模拟输出：构造一个 ostringstream 对象，利用重载的 << 运算符写入 s 的内容
     std::ostringstream outputStream;
     outputStream << s;
     EXPECT_STREQ(outputStream.str().c_str(), "HelloWorld") << "输出运算符 << 写入数据错误";
-}
-
-
-// main 函数，运行所有测试
-int main(int argc, char **argv)
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }
