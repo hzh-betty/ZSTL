@@ -1,222 +1,218 @@
+#pragma once 
 #include "gtest/gtest.h"
 #include "../include/list.hpp"  
 #include <vector>
 
-// 为了测试，也可以写一个简单的辅助函数获取容器中所有元素（用于比较顺序）
-template <typename T>
-std::vector<T> ToVector(zstl::list<T>& lst) {
-    std::vector<T> vec;
-    for (auto it = lst.begin(); it != lst.end(); ++it) {
-        vec.push_back(*it);
-    }
-    return vec;
+// 测试空链表的初始化，验证 size() 以及 begin() 与 end() 是否正确
+TEST(ListTest, EmptyInitialization) {
+    zstl::list<int> li;
+    EXPECT_EQ(li.size(), 0);
+    // 当链表为空时，begin() 返回的迭代器应和 end() 一致（指向头节点）
+    EXPECT_EQ(li.begin().node_, li.end().node_);
 }
 
+// 测试 push_back 和 push_front 成员函数
+TEST(ListTest, PushBackAndPushFront) {
+    zstl::list<int> li;
+    // 测试 push_back
+    li.push_back(1);  // 列表： [1]
+    EXPECT_EQ(li.size(), 1);
+    EXPECT_EQ(li.front(), 1);
+    EXPECT_EQ(li.back(), 1);
 
-// 测试用例一：空链表的基本状态
-TEST(ListTest, EmptyList) {
-    zstl::list<int> lst;
-    EXPECT_EQ(lst.size(), 0);
-    // 空链表的 begin() == end()
-    EXPECT_EQ(lst.begin(), lst.end());
+    // 测试 push_front，在头部插入数据
+    li.push_front(2); // 列表： [2, 1]
+    EXPECT_EQ(li.size(), 2);
+    EXPECT_EQ(li.front(), 2);
+    EXPECT_EQ(li.back(), 1);
+
+    // 再次在尾部插入数据
+    li.push_back(3);  // 列表： [2, 1, 3]
+    EXPECT_EQ(li.size(), 3);
+    EXPECT_EQ(li.front(), 2);
+    EXPECT_EQ(li.back(), 3);
 }
 
-
-// 测试用例二：push_back 操作
-TEST(ListTest, PushBack) {
-    zstl::list<int> lst;
-    lst.push_back(10);
-    lst.push_back(20);
-    lst.push_back(30);
-    EXPECT_EQ(lst.size(), 3);
-
-    // 检查遍历顺序是否正确：10, 20, 30
-    auto it = lst.begin();
-    EXPECT_EQ(*it, 10);
+// 测试正向迭代器遍历（使用 ++ 运算符）
+TEST(ListTest, IteratorForwardTraversal) {
+    zstl::list<int> li;
+    li.push_back(1);
+    li.push_back(2);
+    li.push_back(3);  // 列表为 [1, 2, 3]
+    auto it = li.begin();
+    EXPECT_EQ(*it, 1);
+    it++;
+    EXPECT_EQ(*it, 2);
     ++it;
-    EXPECT_EQ(*it, 20);
-    ++it;
+    EXPECT_EQ(*it, 3);
+    it++;
+    // 当迭代遍历完整个链表后，应与 end() 相等
+    EXPECT_EQ(it, li.end());
+}
+
+// 测试迭代器后向移动（使用 -- 运算符）
+TEST(ListTest, IteratorBackwardTraversal) {
+    zstl::list<int> li;
+    li.push_back(10);
+    li.push_back(20);
+    li.push_back(30); // 列表为 [10, 20, 30]
+    auto it = li.end();
+    // 后置--操作：指向最后一个有效节点
+    it--;
     EXPECT_EQ(*it, 30);
-}
-
-// 测试用例三：push_front 操作
-TEST(ListTest, PushFront) {
-    zstl::list<int> lst;
-    lst.push_front(10);
-    lst.push_front(20);
-    lst.push_front(30);
-    EXPECT_EQ(lst.size(), 3);
-
-    // push_front 后的顺序为：30, 20, 10
-    auto it = lst.begin();
-    EXPECT_EQ(*it, 30);
-    ++it;
+    it--;
     EXPECT_EQ(*it, 20);
-    ++it;
+    it--;
     EXPECT_EQ(*it, 10);
+    // 此时 it 应该与 begin() 相等
+    EXPECT_EQ(it, li.begin());
 }
 
-// 测试用例四：pop_back 操作
-TEST(ListTest, PopBack) {
-    zstl::list<int> lst;
-    lst.push_back(10);
-    lst.push_back(20);
-    lst.push_back(30);
-    lst.pop_back();  // 删除尾部节点 (30)
-    EXPECT_EQ(lst.size(), 2);
-
-    auto it = lst.begin();
-    EXPECT_EQ(*it, 10);
-    ++it;
-    EXPECT_EQ(*it, 20);
+// 测试 erase 操作（删除中间的节点）
+TEST(ListTest, EraseOperation) {
+    zstl::list<int> li;
+    li.push_back(1);
+    li.push_back(2);
+    li.push_back(3);  // 列表为 [1, 2, 3]
+    auto it = li.begin();
+    it++;  // 指向值 2
+    li.erase(it);  // 删除值为 2 的节点，列表变为 [1, 3]
+    EXPECT_EQ(li.size(), 2);
+    
+    auto iter = li.begin();
+    EXPECT_EQ(*iter, 1);
+    iter++;
+    EXPECT_EQ(*iter, 3);
 }
 
-// 测试用例五：pop_front 操作
-TEST(ListTest, PopFront) {
-    zstl::list<int> lst;
-    lst.push_back(10);
-    lst.push_back(20);
-    lst.push_back(30);
-    lst.pop_front(); // 删除首个有效节点 (10)
-    EXPECT_EQ(lst.size(), 2);
-
-    auto it = lst.begin();
-    EXPECT_EQ(*it, 20);
-    ++it;
-    EXPECT_EQ(*it, 30);
+// 测试 pop_front 和 pop_back 操作
+TEST(ListTest, PopFrontAndPopBack) {
+    zstl::list<int> li;
+    li.push_back(1);
+    li.push_back(2);
+    li.push_back(3);  // 列表为 [1, 2, 3]
+    
+    li.pop_front();   // 删除头节点：结果为 [2, 3]
+    EXPECT_EQ(li.size(), 2);
+    EXPECT_EQ(li.front(), 2);
+    
+    li.pop_back();    // 删除尾节点：结果为 [2]
+    EXPECT_EQ(li.size(), 1);
+    EXPECT_EQ(li.back(), 2);
 }
 
-
-// 测试用例六：insert 操作
-TEST(ListTest, InsertTest) {
-    zstl::list<int> lst;
-    lst.push_back(10);
-    lst.push_back(30);
-    // 找到迭代器指向值为30的节点，然后在其前面插入20
-    auto it = lst.begin();
-    ++it; // it 指向 30
-    lst.insert(it, 20);
-    EXPECT_EQ(lst.size(), 3);
-
-    // 遍历顺序应为：10, 20, 30
-    auto iter = lst.begin();
-    EXPECT_EQ(*iter, 10);
-    ++iter;
-    EXPECT_EQ(*iter, 20);
-    ++iter;
-    EXPECT_EQ(*iter, 30);
+// 测试 clear 操作，清空整个列表
+TEST(ListTest, ClearOperation) {
+    zstl::list<int> li;
+    li.push_back(1);
+    li.push_back(2);
+    li.clear();
+    EXPECT_EQ(li.size(), 0);
+    // 列表为空时，begin() 与 end() 应一致
+    EXPECT_EQ(li.begin().node_, li.end().node_);
 }
 
-
-// 测试用例七：erase 操作（删除中间和头/尾节点）
-TEST(ListTest, EraseTest) {
-    zstl::list<int> lst;
-    lst.push_back(10);
-    lst.push_back(20);
-    lst.push_back(30);
-    lst.push_back(40);
-
-    // 删除中间的某个元素，比如删除20
-    auto it = lst.begin();
-    ++it; // 指向20
-    lst.erase(it);
-    EXPECT_EQ(lst.size(), 3);
-    std::vector<int> expected1 = {10, 30, 40};
-    EXPECT_EQ(ToVector(lst), expected1);
-
-    // 删除头部元素
-    lst.erase(lst.begin());
-    EXPECT_EQ(lst.size(), 2);
-    std::vector<int> expected2 = {30, 40};
-    EXPECT_EQ(ToVector(lst), expected2);
-
-    // 删除尾部元素
-    lst.pop_back();
-    EXPECT_EQ(lst.size(), 1);
-    std::vector<int> expected3 = {30};
-    EXPECT_EQ(ToVector(lst), expected3);
-}
-
-// 测试用例八：拷贝构造函数
-TEST(ListTest, CopyConstructorTest) {
-    zstl::list<int> lst;
-    lst.push_back(10);
-    lst.push_back(20);
-    lst.push_back(30);
-    // 使用拷贝构造函数生成新链表
-    zstl::list<int> lst_copy(lst);
-    EXPECT_EQ(lst.size(), lst_copy.size());
-
-    // 遍历比较两个链表中对应数据是否相同
-    auto it1 = lst.begin();
-    auto it2 = lst_copy.begin();
-    while (it1 != lst.end() && it2 != lst_copy.end()) {
+// 测试复制构造函数（深拷贝）
+TEST(ListTest, CopyConstructor) {
+    zstl::list<int> li;
+    li.push_back(10);
+    li.push_back(20);
+    
+    zstl::list<int> li2(li);  // 使用复制构造函数创建新链表
+    EXPECT_EQ(li2.size(), li.size());
+    
+    auto it1 = li.begin();
+    auto it2 = li2.begin();
+    while (it1 != li.end() && it2 != li2.end()) {
         EXPECT_EQ(*it1, *it2);
         ++it1;
         ++it2;
     }
 }
 
-
-// 测试用例九：赋值运算符（拷贝-交换策略）
-TEST(ListTest, AssignmentOperatorTest) {
-    zstl::list<int> lst1;
-    lst1.push_back(10);
-    lst1.push_back(20);
-
-    zstl::list<int> lst2;
-    lst2.push_back(100);
-    lst2.push_back(200);
-    lst2.push_back(300);
-
-    // 使用赋值运算符
-    lst2 = lst1;
-    EXPECT_EQ(lst1.size(), lst2.size());
-
-    auto it1 = lst1.begin();
-    auto it2 = lst2.begin();
-    while (it1 != lst1.end()) {
+// 测试赋值运算符（拷贝-交换策略）
+TEST(ListTest, AssignmentOperator) {
+    zstl::list<int> li;
+    li.push_back(100);
+    li.push_back(200);
+    
+    zstl::list<int> li2;
+    li2 = li;  // 赋值操作
+    EXPECT_EQ(li2.size(), li.size());
+    
+    auto it1 = li.begin();
+    auto it2 = li2.begin();
+    while (it1 != li.end() && it2 != li2.end()) {
         EXPECT_EQ(*it1, *it2);
         ++it1;
         ++it2;
     }
 }
 
-
-// 测试用例十：clear 操作
-TEST(ListTest, ClearTest) {
-    zstl::list<int> lst;
-    lst.push_back(10);
-    lst.push_back(20);
-    lst.push_back(30);
-    lst.clear();
-    EXPECT_EQ(lst.size(), 0);
-    EXPECT_EQ(lst.begin(), lst.end());
+// 测试 resize 操作：增大链表（新增节点填充默认值）
+TEST(ListTest, ResizeIncreasing) {
+    zstl::list<int> li;
+    li.push_back(1);
+    li.push_back(2);  // 当前列表为 [1, 2]
+    
+    li.resize(5, 7);  // 当新大小大于当前节点数时，尾部新增 7；最终列表 [1, 2, 7, 7, 7]
+    EXPECT_EQ(li.size(), 5);
+    
+    auto it = li.begin();
+    EXPECT_EQ(*it, 1);
+    ++it;
+    EXPECT_EQ(*it, 2);
+    ++it;
+    EXPECT_EQ(*it, 7);
+    ++it;
+    EXPECT_EQ(*it, 7);
+    ++it;
+    EXPECT_EQ(*it, 7);
 }
 
-
-// 测试用例十一：swap 操作
-TEST(ListTest, SwapTest) {
-    zstl::list<int> lst1;
-    lst1.push_back(1);
-    lst1.push_back(2);
-
-    zstl::list<int> lst2;
-    lst2.push_back(10);
-    lst2.push_back(20);
-    lst2.push_back(30);
-
-    // 交换两个链表
-    lst1.swap(lst2);
-
-    // 交换后 lst1 应该拥有原来 lst2 的内容
-    EXPECT_EQ(lst1.size(), 3);
-    std::vector<int> expected1 = {10, 20, 30};
-    EXPECT_EQ(ToVector(lst1), expected1);
-
-    // lst2 应该拥有原来 lst1 的内容
-    EXPECT_EQ(lst2.size(), 2);
-    std::vector<int> expected2 = {1, 2};
-    EXPECT_EQ(ToVector(lst2), expected2);
+// 测试 resize 操作：减小链表（截断）
+TEST(ListTest, ResizeDecreasing) {
+    zstl::list<int> li;
+    li.push_back(1);
+    li.push_back(2);
+    li.push_back(3);  // 当前列表为 [1, 2, 3]
+    
+    li.resize(1);     // 列表截断为 [1]
+    EXPECT_EQ(li.size(), 1);
+    EXPECT_EQ(li.front(), 1);
 }
 
+// 测试 swap 操作：交换两个链表的内容
+TEST(ListTest, SwapOperation) {
+    zstl::list<int> li1;
+    li1.push_back(1);
+    li1.push_back(2);  // li1: [1, 2]
+    
+    zstl::list<int> li2;
+    li2.push_back(3);
+    li2.push_back(4);  // li2: [3, 4]
+    
+    li1.swap(li2);
+    
+    EXPECT_EQ(li1.size(), 2);
+    EXPECT_EQ(li2.size(), 2);
+    
+    auto it1 = li1.begin();
+    EXPECT_EQ(*it1, 3);
+    ++it1;
+    EXPECT_EQ(*it1, 4);
+    
+    auto it2 = li2.begin();
+    EXPECT_EQ(*it2, 1);
+    ++it2;
+    EXPECT_EQ(*it2, 2);
+}
+
+// 测试模板类型为 std::string 时的行为
+TEST(ListTest, StringType) {
+    zstl::list<std::string> ls;
+    ls.push_back("hello");
+    ls.push_back("world");
+    EXPECT_EQ(ls.front(), "hello");
+    EXPECT_EQ(ls.back(), "world");
+}

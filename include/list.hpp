@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <cassert>
 
@@ -227,6 +228,45 @@ namespace zstl
         void pop_front()
         {
             erase(begin());
+        }
+
+        // 获取头节点元素
+        T &front()
+        {
+            return *(begin());
+        }
+        const T &front() const
+        {
+            return *(begin());
+        }
+        // 获取尾节点元素
+        T &back()
+        {
+            return *(--end());
+        }
+
+        const T &back() const
+        {
+            return *(--end());
+        }
+
+        // 调整大小：newSize>size时填充字符，否则截断
+        void resize(size_t n, const T &val = T())
+        {
+            if (n < size_)
+            {
+                while (size_ != n)
+                {
+                    pop_back();
+                }
+            }
+            else
+            {
+                while (size_ != n)
+                {
+                    push_back(val);
+                }
+            }
         }
 
         // 清空链表中所有元素
