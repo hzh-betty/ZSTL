@@ -1,7 +1,7 @@
 #include<iostream>
 namespace zstl
 {
-    class priority
+    class priority_queue
     {
 
     };
