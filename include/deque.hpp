@@ -17,6 +17,12 @@ namespace zstl
         {
         }
 
+        DequeIterator(map_pointer newnode)
+        {
+            set_node(newnode);
+            cur_ = first_;
+        }
+
         // 调到下一个缓冲区
         void set_node(map_pointer newnode)
         {
@@ -78,7 +84,8 @@ namespace zstl
         Self operator--(int)
         {
             Self tmp(*this);
-            --(*this) return tmp;
+            --(*this);
+            return tmp;
         }
 
         Self &operator+=(int n)
@@ -182,6 +189,32 @@ namespace zstl
             return finish_;
         }
 
+        deque()
+        {
+            create_map(0);
+        }
+
+        deque(size_t n, const T &val)
+        {
+            create_map(n);
+            iterator iter = start_;
+            while (iter != finish_)
+            {
+                *iter = val;
+                ++iter;
+            }
+        }
+
+        deque(const deque &d)
+        {
+            create_map(0);
+            iterator iter = d.fisrt_;
+            while (iter != finish_)
+            {
+                *push_back(*iter);
+                ++iter;
+            }
+        }
         void push_back(const T &val)
         {
             if (finish_.cur_ != finish_.last_ - 1)
@@ -192,10 +225,10 @@ namespace zstl
             else
             {
                 // 尾部增加缓冲区
-                check_tail_map_size();
+                check_map_size();
                 *(finish_.node_ + 1) = new T[BufferSize];
-                ++finish_;
                 *finish_ = val;
+                ++finish_;
             }
         }
 
@@ -209,10 +242,10 @@ namespace zstl
             else
             {
                 // 头部增加缓冲区
-                check_tail_map_size();
-                *(finish_.node_ - 1) = new T[BufferSize];
-                --finish_;
-                *finish_ = val;
+                check_map_size();
+                *(start_.node_ - 1) = new T[BufferSize];
+                --start_;
+                *start_ = val;
             }
         }
 
@@ -227,29 +260,100 @@ namespace zstl
             assert(!empty());
             ++start_;
         }
-        deque()
+        T &front()
         {
-            create_map(0);
+            assert(!empty());
+            return *start_;
         }
 
-        deque(size_t n, const T &val)
+        T &back()
         {
-            create_map(n);
-            map_pointer cur;
-            for (cur = start_.node_; cur < finish_.node_; ++cur)
+            assert(!empty());
+            return *(finish_ - 1);
+        }
+
+        const T &front() const
+        {
+            assert(!empty());
+            return *start_;
+        }
+
+        const T &back() const
+        {
+            assert(!empty());
+            return *(finish_ - 1);
+        }
+
+        // 在pos之前插入一个元素
+        iteraor insert(iterator pos, const T &val)
+        {
+            size_t index = pos - start_;
+            size_t size = size();
+            bool ret = check_map_size();
+            // 将元素往前移
+            if (index < size / 2)
             {
-                fill(*cur, (*cur).last_, val);
+                // 检查头部是否需要增加缓冲区
+                if (ret == true)
+                {
+                    *(start_.node_ - 1) = new T[BufferSize];
+                }
+
             }
-            fill(*cur, (*cur).cur_, val);
+            else // 将元素往后移
+            {
+                
+            }
+        }
+
+        size_t size() const
+        {
+            return finish_ - start_;
+        }
+
+        bool empty() const
+        {
+            return start_ == finish_;
+        }
+
+        void clear()
+        {
+            // 1. 清空所有缓冲区
+            for (map_pointer node = start_.node_; node <= finish_.node_; ++node)
+            {
+                delete[] *node;
+            }
+
+            // 2. 重新调整缓冲区区间
+            map_pointer node = map_ + map_size_ / 2;
+            *node = new T[BufferSize];
+            start_.set_node(node);
+            start_.cur_ = start.first_;
+            finish_ = start_;
+        }
+
+        ~deque()
+        {
+            for (map_pointer node = start_.node_; node <= finish_.node_; ++node)
+            {
+                delete[] *node;
+            }
+
+            delete[] map_;
+            start_ = finish_ = iterator();
+            map_size_ = 0;
         }
 
     private:
-        void check_tail_map_size()
+        bool check_map_size()
         {
-            if (finish_ + 1 - *map_ >= map_size_)
+            // 如果前或者后元素已满
+            if (start_.cur_ == *map_ || finish_.cur_ == (*(map_ + map_size_ - 1) + BufferSize - 1))
             {
                 expanse_capacity(2 * map_size_);
+                return true;
             }
+            return false;
         }
 
         void expanse_capacity(size_t add_num)
@@ -304,16 +408,6 @@ namespace zstl
             finish_.set_node(nfinsh);
             start.cur_ = start_.first_;
             finish_.cur = finish_.first_ + (n % BufferSize);
-        }
-
-        template <typename Inputiterator, typename T>
-        void fill(Inputiterator first, Inputiterator end, const T &val)
-        {
-            while (fistr != last)
-            {
-                *first = val;
-                ++first;
-            }
         }
 
     private:
