@@ -47,7 +47,7 @@ namespace zstl
         }
 
         // 获取大小
-        size_t size()
+        size_t size()const
         {
             return con_.size();
         }

@@ -94,7 +94,7 @@ namespace zstl
     // 测试 find 成员函数寻找单个字符及子串
     TEST(StringTest, Find)
     {
-       string s("Hello, world!");
+        string s("Hello, world!");
         size_t pos = s.find('w');
         EXPECT_NE(pos, (size_t)-1);
         EXPECT_EQ(s[pos], 'w');
