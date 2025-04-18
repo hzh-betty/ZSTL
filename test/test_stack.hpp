@@ -3,9 +3,11 @@
 #include "../include/list.hpp"
 #include "../include/vector.hpp"
 
+namespace zstl
+{
 // 测试 zstl::stack 类
 TEST(StackTest, PushAndTop) {
-    zstl::stack<int> s;
+    stack<int> s;
 
     // 测试 push 操作
     s.push(10);
@@ -17,7 +19,7 @@ TEST(StackTest, PushAndTop) {
 }
 
 TEST(StackTest, Pop) {
-    zstl::stack<int> s;
+    stack<int> s;
 
     // 添加元素
     s.push(10);
@@ -36,7 +38,7 @@ TEST(StackTest, Pop) {
 }
 
 TEST(StackTest, Empty) {
-    zstl::stack<int> s;
+    stack<int> s;
 
     // 初始时栈应该为空
     EXPECT_TRUE(s.empty());
@@ -47,7 +49,7 @@ TEST(StackTest, Empty) {
 }
 
 TEST(StackTest, Size) {
-    zstl::stack<int> s;
+    stack<int> s;
 
     // 栈空时大小为 0
     EXPECT_EQ(s.size(), 0);
@@ -63,24 +65,25 @@ TEST(StackTest, Size) {
 }
 
 TEST(StackTest, ConstTop) {
-    zstl::stack<int> s;
+    stack<int> s;
     s.push(10);
     s.push(20);
     
     // 使用 const 对象获取栈顶元素，确保 const top() 方法工作正常
-    const zstl::stack<int>& const_s = s;
+    const stack<int>& const_s = s;
     EXPECT_EQ(const_s.top(), 20);
 }
 
 TEST(StackTest, MultipleContainers) {
     // 测试使用自定义容器
-    zstl::stack<int, zstl::list<int>> s;
+    stack<int, list<int>> s;
     s.push(10);
     s.push(20);
     EXPECT_EQ(s.top(), 20);
 
-    zstl::stack<int, zstl::vector<int>> ss;
+    stack<int, vector<int>> ss;
     ss.push(10);
     ss.push(20);
     EXPECT_EQ(ss.top(), 20);
 }
+};
