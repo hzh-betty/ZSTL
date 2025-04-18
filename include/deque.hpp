@@ -265,7 +265,8 @@ namespace zstl
         const T &back() const
         {
             assert(!empty());
-            return *(finish_ - 1);
+            iterator tmp = finish_;
+            return *(tmp - 1);
         }
 
         // 在 pos 位置插入元素

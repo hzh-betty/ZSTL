@@ -218,6 +218,13 @@ namespace zstl
             return pos;
         }
 
+        // 获取首尾元素
+        T &front() { return start_[0]; }
+        T &back() { return start_[size() - 1]; }
+        const T &front() const { return start_[0]; }
+        const T &back() const { return start_[size() - 1]; }
+
+
         // 重载 [] 运算符，提供对元素的可读写访问
         T &operator[](size_t pos)
         {
