@@ -52,6 +52,13 @@ namespace zstl
             }
         }
 
+        // 赋值重载
+        vector<T>&operator=(vector<T> v)
+        {
+            swap(v);
+            return *this;
+        }
+
         // 范围构造函数：根据迭代器 [first, last) 内的元素构造 vector
         template <typename InputIterator>
         vector(InputIterator first, InputIterator last)

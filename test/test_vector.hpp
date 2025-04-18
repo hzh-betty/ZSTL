@@ -26,17 +26,21 @@ TEST(VectorTest, PushBackPopBack) {
     EXPECT_TRUE(vec.empty());
 }
 
-// 测试拷贝构造函数
-TEST(VectorTest, CopyConstructor) {
-    zstl::vector<int> vec;
-    for (int i = 0; i < 5; ++i) {
-        vec.push_back(i);
-    }
-    zstl::vector<int> copyVec(vec); // 使用拷贝构造函数
-    EXPECT_EQ(copyVec.size(), vec.size());
-    for (size_t i = 0; i < vec.size(); ++i) {
-        EXPECT_EQ(copyVec[i], vec[i]);
-    }
+// 测试拷贝构造和赋值操作符
+TEST(VectorTest, CopyAndAssignment) {
+    zstl::vector<zstl::string> v1;
+    v1.push_back("a");
+    v1.push_back("b");
+    zstl::vector<zstl::string> v2(v1);  // 拷贝构造
+    EXPECT_EQ(v2.size(), 2u);
+    EXPECT_EQ(v2[0], "a");
+    EXPECT_EQ(v2[1], "b");
+
+    zstl::vector<zstl::string> v3;
+    v3 = v1;  // 赋值运算符
+    EXPECT_EQ(v3.size(), 2u);
+    EXPECT_EQ(v3[0], "a");
+    EXPECT_EQ(v3[1], "b");
 }
 
 // 测试范围构造函数
