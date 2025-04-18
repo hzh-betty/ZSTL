@@ -35,13 +35,13 @@ namespace zstl
         }
 
         // 重载解引用运算符，返回当前指向的元素
-        Ref operator*()
+        Ref operator*()const
         {
             return *cur_;
         }
 
         // 重载箭头运算符，返回当前指向的元素指针
-        Ptr operator->()
+        Ptr operator->()const
         {
             return cur_;
         }
