@@ -149,6 +149,7 @@ namespace zstl
         using Node = RBNode<T>;
 
     public:
+        // 迭代器
         using iterator = RBTreeIterator<T, T &, T *>;
         using const_iterator = RBTreeIterator<T, const T &, const T *>;
 
