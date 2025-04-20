@@ -7,7 +7,10 @@ namespace zstl
     TEST(SetTest, EmptySet)
     {
         set<int> s;
-        // 空集合的begin应等于end
+        // 新创建的集合应为空，大小为0
+        EXPECT_TRUE(s.empty());
+        EXPECT_EQ(s.size(), 0u);
+        // begin() 应等于 end()
         EXPECT_EQ(s.begin(), s.end());
     }
 
@@ -22,6 +25,7 @@ namespace zstl
         EXPECT_EQ(*result.first, 42);
         // find应能找到该元素
         EXPECT_NE(s.find(42), s.end());
+        EXPECT_EQ(s.size(), 1u);
     }
 
     // 测试重复插入
@@ -34,6 +38,7 @@ namespace zstl
         EXPECT_FALSE(result.second);
         // 迭代器应指向已有元素的位置
         EXPECT_EQ(*result.first, 7);
+        EXPECT_EQ(s.size(), 1u);
     }
 
     // 测试删除元素
@@ -42,11 +47,13 @@ namespace zstl
         set<int> s;
         s.insert(1);
         s.insert(2);
+        EXPECT_EQ(s.size(), 2u);
         // 删除存在的元素应返回并移除
         EXPECT_TRUE(s.erase(1));
         EXPECT_EQ(s.find(1), s.end());
         // 删除不存在的元素应返回false
         EXPECT_FALSE(s.erase(99));
+        EXPECT_EQ(s.size(), 1);
     }
 
     // 测试有序遍历
@@ -58,6 +65,7 @@ namespace zstl
         {
             s.insert(v);
         }
+        EXPECT_EQ(s.size(), 4u);
         int expected = 1;
         for (auto it = s.begin(); it != s.end(); ++it)
         {
@@ -96,6 +104,8 @@ namespace zstl
         {
             s.insert(i);
         }
+        EXPECT_EQ(s.size(), 1000u); 
+
         // 验证所有元素都能找到
         for (int i = 0; i < N; ++i)
         {
@@ -106,6 +116,7 @@ namespace zstl
         {
             EXPECT_TRUE(s.erase(i));
         }
+        EXPECT_EQ(s.size(), 500u); 
         // 验证偶数已删除，奇数仍存在
         for (int i = 0; i < N; ++i)
         {

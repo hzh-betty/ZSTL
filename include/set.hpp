@@ -1,23 +1,24 @@
 #include "rb_tree.hpp"
 namespace zstl
 {
+    // 比较仿函数
     template <typename K>
+    struct SetCompare
+    {
+        bool operator()(const K &key1,const K &key2)
+        {
+            return key1 < key2;
+        }
+    };
+
+    template <typename K, typename Compare = SetCompare<K>>
     class set
     {
-        // 比较仿函数
-        struct SetKeyOfT
-        {
-            const K &operator()(const K &key)
-            {
-                return key;
-            }
-        };
-
     public:
         // 保证K都不能修改，此时就需要支持iterator转换为const_iterator
-        using iterator = typename RBTree<K, K, SetKeyOfT>::const_iterator;
-        using const_iterator = typename RBTree<K, K, SetKeyOfT>::const_iterator;
-        
+        using iterator = typename RBTree<K, K, Compare>::const_iterator;
+        using const_iterator = typename RBTree<K, K, Compare>::const_iterator;
+
         iterator begin()
         {
             return rb_tree_.begin();
@@ -53,7 +54,16 @@ namespace zstl
             return rb_tree_.find(key);
         }
 
+        bool empty()const
+        {
+            return rb_tree_.empty();
+        }
+
+        size_t size()const
+        {
+            return rb_tree_.size();
+        }
     private:
-        RBTree<K, K, SetKeyOfT> rb_tree_; // K不能修改
+        RBTree<K, K, Compare> rb_tree_; // K不能修改
     };
 };

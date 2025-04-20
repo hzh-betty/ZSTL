@@ -2,19 +2,30 @@
 namespace zstl
 {
     template <typename K, typename V>
+    struct MapCompare
+    {
+        bool operator()(const std::pair<K, V> &kv1, const std::pair<K, V> &kv2)
+        {
+            return kv1.first < kv2.first;
+        }
+
+        bool operator()(const K &key1, const std::pair<K, V> &kv2)
+        {
+            return key1 < kv2.first;
+        }
+        
+        bool operator()(const std::pair<K, V> &kv1, const K &key2)
+        {
+            return kv1.first < key2;
+        }
+    };
+
+    template <typename K, typename V, typename Compare = MapCompare<K, V>>
     class map
     {
-        struct MapKeyOfT
-        {
-            const K &operator()(const std::pair<K, V> &kv)
-            {
-                return kv.first;
-            }
-        };
-
     public:
-        using iterator = typename RBTree<K, std::pair<const K, V>, MapKeyOfT>::iterator;
-        using const_iterator = typename RBTree<K, std::pair<const K, V>, MapKeyOfT>::const_iterator;
+        using iterator = typename RBTree<K, std::pair<const K, V>, Compare>::iterator;
+        using const_iterator = typename RBTree<K, std::pair<const K, V>, Compare>::const_iterator;
         iterator begin()
         {
             return rb_tree_.begin();
@@ -57,7 +68,17 @@ namespace zstl
             return ret.first->second;
         }
 
+        bool empty() const
+        {
+            return rb_tree_.empty();
+        }
+
+        size_t size() const
+        {
+            return rb_tree_.size();
+        }
+
     private:
-        RBTree<K, std::pair<const K, V>, MapKeyOfT> rb_tree_;
+        RBTree<K, std::pair<const K, V>, Compare> rb_tree_;
     };
 };

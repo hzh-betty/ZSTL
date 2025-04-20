@@ -4,6 +4,18 @@
 #include <gtest/gtest.h>
 namespace zstl
 {
+    // 测试空 map 的行为
+    TEST(MapTest, EmptyMap)
+    {
+        map<int, int> m;
+        // 刚创建的 map 应该为空
+        EXPECT_TRUE(m.empty());
+        // 大小为 0
+        EXPECT_EQ(m.size(), 0u);
+        // begin() 应等于 end()
+        EXPECT_EQ(m.begin(), m.end());
+    }
+
     // 测试 zstl::map 的基本功能
     TEST(MapTest, InsertAndFind)
     {
@@ -27,6 +39,7 @@ namespace zstl
         // 查找不存在的 key
         auto it = m.find(3);
         EXPECT_EQ(it, m.end()) << "查找不存在的 key=3 应返回 end()";
+        EXPECT_EQ(m.size(), 2u);
     }
 
     // 测试迭代器顺序和 begin/end
@@ -64,12 +77,14 @@ namespace zstl
         {
             m.insert(std::make_pair(i, i * 10));
         }
+        EXPECT_EQ(m.size(), 5u);
         // 删除存在的 key
         EXPECT_TRUE(m.erase(2)) << "删除存在的 key=2 应返回 true";
         EXPECT_EQ(m.find(2), m.end()) << "删除后 find(2) 应为 end()";
 
         // 删除不存在的 key
         EXPECT_FALSE(m.erase(999)) << "删除不存在的 key=999 应返回 false";
+        EXPECT_EQ(m.size(), 4u);
     }
 
     // 测试拷贝构造和赋值操作

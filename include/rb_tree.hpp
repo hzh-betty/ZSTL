@@ -143,7 +143,7 @@ namespace zstl
         Node *node_; // 节点
     };
 
-    template <typename K, typename T, typename KeyOfT>
+    template <typename K, typename T, typename Compare>
     class RBTree
     {
         using Node = RBNode<T>;
@@ -178,21 +178,23 @@ namespace zstl
             init_header();
         }
 
-        RBTree(const RBTree<K, T, KeyOfT> &t)
+        RBTree(const RBTree &t)
         {
             // 拷贝构造时重建header结构
             init_header();
             header_->parent_ = copy(t.header_->parent_);
             adjust_header_pointers(header_->parent_);
+            size_ = t.size_;
         }
 
-        RBTree<K, T, KeyOfT> &operator=(const RBTree<K, T, KeyOfT> &t)
+        RBTree &operator=(const RBTree &t)
         {
             if (this != &t)
             {
                 clear();
                 header_->parent_ = copy(t.header_->parent_);
                 adjust_header_pointers(header_->parent_);
+                size_ = t.size_;
             }
             return *this;
         }
@@ -205,21 +207,22 @@ namespace zstl
                 header_->parent_ = new Node(data);
                 header_->parent_->col_ = Color::BLACK;
                 header_->parent_->parent_ = header_;
+                size_++;
                 return std::make_pair(iterator(header_->parent_), true);
             }
             else
             {
-                KeyOfT kot;
+                Compare com;
                 Node *cur = header_->parent_;
                 Node *parent = nullptr;
                 while (cur)
                 {
-                    if (kot(cur->data_) < kot(data))
+                    if (com(cur->data_, data))
                     {
                         parent = cur;
                         cur = cur->right_;
                     }
-                    else if (kot(cur->data_) > kot(data))
+                    else if (com(data, cur->data_))
                     {
                         parent = cur;
                         cur = cur->left_;
@@ -231,8 +234,9 @@ namespace zstl
                 }
                 // 找到插入位置
                 cur = new Node(data);
+                size_++;
                 newnode = cur;
-                if (kot(parent->data_) < kot(data))
+                if (com(parent->data_, data))
                 {
                     parent->right_ = cur;
                 }
@@ -320,6 +324,7 @@ namespace zstl
                     }
                 }
             }
+
             adjust_header_pointers(header_->parent_);
             // 防止情况三改到根节点变为红色
             if (header_->parent_)
@@ -400,16 +405,16 @@ namespace zstl
 
         iterator find(const K &val)
         {
-            KeyOfT kot;
+            Compare com;
             Node *cur = header_->parent_;
             while (cur)
             {
-                if (kot(cur->data_) > val)
+                if (com(val, cur->data_))
                 {
                     // 左子树中查找
                     cur = cur->left_;
                 }
-                else if (kot(cur->data_) < val)
+                else if (com(cur->data_, val))
                 {
                     // 右子树中查找
                     cur = cur->right_;
@@ -426,22 +431,23 @@ namespace zstl
         // 删除函数
         bool erase(const K &key)
         {
-            KeyOfT kot;
+            Compare com;
             Node *cur = header_->parent_;
             Node *parent = nullptr;
             // 用于标记实际的待删除结点及其父结点
             Node *delParent = nullptr;
             Node *delCur = nullptr;
+
             // 找到删除节点
             while (cur)
             {
-                if (key < kot(cur->data_)) // 所给key值小于当前结点的key值
+                if (com(key, cur->data_)) // 所给key值小于当前结点的key值
                 {
                     // 往该结点的左子树走
                     parent = cur;
                     cur = cur->left_;
                 }
-                else if (key > kot(cur->data_)) // 所给key值大于当前结点的key值
+                else if (com(cur->data_, key)) // 所给key值大于当前结点的key值
                 {
                     // 往该结点的右子树走
                     parent = cur;
@@ -461,6 +467,7 @@ namespace zstl
                                 header_->parent_->col_ = Color::BLACK; // 根结点为黑色
                             }
                             delete cur; // 删除原根结点
+                            --size_;
                             adjust_header_pointers(header_->parent_);
                             return true;
                         }
@@ -482,6 +489,7 @@ namespace zstl
                                 header_->parent_->col_ = Color::BLACK; // 根结点为黑色
                             }
                             delete cur; // 删除原根结点
+                            --size_;
                             adjust_header_pointers(header_->parent_);
                             return true;
                         }
@@ -561,6 +569,7 @@ namespace zstl
 
             //(三)进行实际删除
             delete_node(del, delP);
+            --size_;
 
             adjust_header_pointers(header_->parent_);
             return true;
@@ -710,10 +719,21 @@ namespace zstl
             }
         }
 
+        size_t size() const
+        {
+            return size_;
+        }
+
+        bool empty() const
+        {
+            return size_ == 0;
+        }
+
         ~RBTree()
         {
             clear();
             delete header_;
+            size_ = 0;
         }
 
     private:
@@ -779,6 +799,7 @@ namespace zstl
             header_->left_ = header_;
             header_->right_ = header_;
             header_->parent_ = nullptr;
+            size_ = 0;
         }
 
         // 辅助函数：调整header_的极值指针
@@ -810,5 +831,6 @@ namespace zstl
 
     private:
         Node *header_; // 头节点
+        size_t size_;  // 节点数量
     };
 };
