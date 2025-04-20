@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../include/priority_queue.hpp"
+#include "../include/queue.hpp"
 #include "../include/deque.hpp"
 
 namespace zstl {
