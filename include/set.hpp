@@ -14,8 +14,10 @@ namespace zstl
         };
 
     public:
-        using iterator = typename RBTree<K, const K, SetKeyOfT>::iterator;
-        using const_iterator = typename RBTree<K, const K, SetKeyOfT>::const_iterator;
+        // 保证K都不能修改，此时就需要支持iterator转换为const_iterator
+        using iterator = typename RBTree<K, K, SetKeyOfT>::const_iterator;
+        using const_iterator = typename RBTree<K, K, SetKeyOfT>::const_iterator;
+        
         iterator begin()
         {
             return rb_tree_.begin();
@@ -52,6 +54,6 @@ namespace zstl
         }
 
     private:
-        RBTree<K, const K, SetKeyOfT> rb_tree_; // K不能修改
+        RBTree<K, K, SetKeyOfT> rb_tree_; // K不能修改
     };
 };
