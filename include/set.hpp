@@ -15,7 +15,7 @@ namespace zstl
 
     public:
         using iterator = typename RBTree<K, const K, SetKeyOfT>::iterator;
-        using const_iterator = typename RBTree<K, const K, SetKeyOfT>::iterator;
+        using const_iterator = typename RBTree<K, const K, SetKeyOfT>::const_iterator;
         iterator begin()
         {
             return rb_tree_.begin();
