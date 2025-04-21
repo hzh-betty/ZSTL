@@ -7,6 +7,7 @@
 #include "test_priority_queue.hpp"
 #include "test_set.hpp"
 #include "test_map.hpp"
+#include "test_hashtable.hpp"
 // 主函数：运行所有测试
 int main(int argc, char **argv)
 {

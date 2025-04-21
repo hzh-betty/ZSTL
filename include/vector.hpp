@@ -53,7 +53,7 @@ namespace zstl
         }
 
         // 赋值重载
-        vector<T>&operator=(vector<T> v)
+        vector<T> &operator=(vector<T> v)
         {
             swap(v);
             return *this;
@@ -223,7 +223,6 @@ namespace zstl
         T &back() { return start_[size() - 1]; }
         const T &front() const { return start_[0]; }
         const T &back() const { return start_[size() - 1]; }
-
 
         // 重载 [] 运算符，提供对元素的可读写访问
         T &operator[](size_t pos)
