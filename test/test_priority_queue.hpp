@@ -1,3 +1,4 @@
+#pragma once
 #include <gtest/gtest.h>
 #include "../include/queue.hpp"
 #include "../include/deque.hpp"

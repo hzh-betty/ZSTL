@@ -1,3 +1,4 @@
+#pragma once
 #include <gtest/gtest.h>
 #include "../include/stack.hpp"
 #include "../include/list.hpp"
