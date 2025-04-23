@@ -1,3 +1,4 @@
+#pragma once
 #include "rb_tree.hpp"
 namespace zstl
 {
@@ -17,6 +18,11 @@ namespace zstl
         bool operator()(const std::pair<K, V> &kv1, const K &key2)
         {
             return kv1.first < key2;
+        }
+
+        const K& operator()(const std::pair<K, V> &kv1)
+        {
+            return kv1.first;
         }
     };
 
@@ -48,12 +54,12 @@ namespace zstl
 
         std::pair<iterator, bool> insert(const std::pair<K, V> &val)
         {
-            return rb_tree_.insert(val);
+            return rb_tree_.insert_unique(val);
         }
 
-        bool erase(const K &key)
+        size_t erase(const K &key)
         {
-            return rb_tree_.erase(key);
+            return rb_tree_.erase(key)?1:0;
         }
 
         iterator find(const K &key)
@@ -64,7 +70,7 @@ namespace zstl
         V &operator[](const K &key)
         {
             // 没有则插入，有则返回V
-            auto ret = insert(std::make_pair(key, V()));
+            auto ret = rb_tree_.insert_unique(std::make_pair(key, V()));
             return ret.first->second;
         }
 

@@ -78,24 +78,25 @@ namespace zstl
             m.insert(std::make_pair(i, i * 10));
         }
         EXPECT_EQ(m.size(), 5u);
+
         // 删除存在的 key
-        EXPECT_TRUE(m.erase(2)) << "删除存在的 key=2 应返回 true";
-        EXPECT_EQ(m.find(2), m.end()) << "删除后 find(2) 应为 end()";
+        EXPECT_EQ(m.erase(2), 1);
+        EXPECT_EQ(m.find(2), m.end());
 
         // 删除不存在的 key
-        EXPECT_FALSE(m.erase(999)) << "删除不存在的 key=999 应返回 false";
+        EXPECT_EQ(m.erase(999), 0) << "删除不存在的 key=999 应返回 false";
         EXPECT_EQ(m.size(), 4u);
     }
 
     // 测试拷贝构造和赋值操作
     TEST(MapTest, CopyAndAssignment)
     {
-        map<int, std::string> m1;
+        map<int, string> m1;
         m1.insert(std::make_pair(1, "a"));
         m1.insert(std::make_pair(2, "b"));
 
         // 拷贝构造
-        map<int, std::string> m2(m1);
+        map<int, string> m2(m1);
         EXPECT_EQ(m2.find(1)->second, "a");
         EXPECT_EQ(m2.find(2)->second, "b");
 
@@ -105,7 +106,7 @@ namespace zstl
         EXPECT_EQ(m2.find(1)->second, "a");
 
         // 赋值操作
-        map<int, std::string> m3;
+        map<int, string> m3;
         m3 = m1;
         EXPECT_EQ(m3.find(1)->second, "alpha");
         EXPECT_EQ(m3.find(2)->second, "b");

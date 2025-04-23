@@ -49,10 +49,10 @@ namespace zstl
         s.insert(2);
         EXPECT_EQ(s.size(), 2u);
         // 删除存在的元素应返回并移除
-        EXPECT_TRUE(s.erase(1));
+        EXPECT_EQ(s.erase(1),1);
         EXPECT_EQ(s.find(1), s.end());
         // 删除不存在的元素应返回false
-        EXPECT_FALSE(s.erase(99));
+        EXPECT_EQ(s.erase(99),0);
         EXPECT_EQ(s.size(), 1);
     }
 
