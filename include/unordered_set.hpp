@@ -18,7 +18,7 @@ namespace zstl
     };
 
     template <typename K>
-    struct HashFunc
+    struct SetHashFunc
     {
         size_t operator()(const K &key)
         {
@@ -26,7 +26,7 @@ namespace zstl
         }
     };
     template <>
-    struct HashFunc<string>
+    struct SetHashFunc<string>
     {
         size_t operator()(const string &s)
         {
@@ -39,7 +39,7 @@ namespace zstl
         }
     };
 
-    template <typename K, typename Hash = HashFunc<K>, typename Compare = USetCompare<K>>
+    template <typename K, typename Hash = SetHashFunc<K>, typename Compare = USetCompare<K>>
     class unordered_set
     {
     public:
