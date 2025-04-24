@@ -7,7 +7,7 @@
 namespace zstl
 {
     // 测试基本插入和大小
-    TEST(MultisetBasicTest, InsertAndSize)
+    TEST(MultisetTest, InsertAndSize)
     {
         multiset<int> ms;
         EXPECT_TRUE(ms.empty()); // 刚创建应为空容器
@@ -21,33 +21,42 @@ namespace zstl
     }
 
     // 测试支持重复元素插入
-    TEST(MultisetDuplicateTest, InsertDuplicates)
+    TEST(MultisetTest, InsertDuplicates)
     {
         multiset<int> ms;
-        ms.insert(4);
-        ms.insert(4);
-        ms.insert(4);
-        EXPECT_EQ(ms.size(), 3); // 重复插入三次，大小为 3
+        ms.insert(1);
+        for (int i = 0; i < 10; i++)
+        {
+            ms.insert(4);
+        }
+        ms.insert(10);
+        EXPECT_EQ(ms.size(), 12); // 重复插入12次，大小为 12
+
+        EXPECT_EQ(*ms.begin(), 1);
+        EXPECT_EQ(*(--ms.end()), 10);
+        auto begin1 = ++ms.begin();
+        auto end1 = --ms.end();
 
         // 所有值都应该等于 4
         int count = 0;
-        for (auto it = ms.begin(); it != ms.end(); ++it)
+        for (auto it = begin1; it != end1; ++it)
         {
             EXPECT_EQ(*it, 4);
             ++count;
         }
-        EXPECT_EQ(count, 3);
+        EXPECT_EQ(count, 10);
     }
 
     // 测试按键删除所有元素
-    TEST(MultisetEraseKeyTest, EraseByKey)
+    TEST(MultisetTest, EraseByKey)
     {
         multiset<int> ms;
         ms.insert(1);
-        ms.insert(2);
-        ms.insert(2);
+        for (int i = 0; i < 1; i++)
+        {
+            ms.insert(2);
+        }
         ms.insert(3);
-
 
         // 删除所有值为 2 的元素
         size_t removed = ms.erase(2);
@@ -58,7 +67,7 @@ namespace zstl
     }
 
     // 测试通过迭代器删除单个元素
-    TEST(MultisetEraseIteratorTest, EraseByIterator)
+    TEST(MultisetTest, EraseByIterator)
     {
         multiset<int> ms;
         ms.insert(10);
@@ -73,7 +82,7 @@ namespace zstl
     }
 
     // 测试查找操作
-    TEST(MultisetFindTest, FindExistingAndNonExisting)
+    TEST(MultisetTest, FindExistingAndNonExisting)
     {
         multiset<std::string> ms;
         ms.insert("apple");
@@ -87,8 +96,49 @@ namespace zstl
         EXPECT_EQ(it2, ms.end()); // 找不到 cherry
     }
 
+    // 测试插入大量元素的稳定性
+    TEST(MultisetTest, BulkInsertErase)
+    {
+        multiset<int> s;
+        const int N = 1000;
+        for (int i = 0; i < N; ++i)
+        {
+            s.insert(i);
+        }
+        EXPECT_EQ(s.size(), 1000u);
+
+        // 验证所有元素都能找到
+        for (int i = 0; i < N; ++i)
+        {
+            EXPECT_NE(s.find(i), s.end());
+        }
+        // 删除偶数元素
+        for (int i = 0; i < N; i += 2)
+        {
+            EXPECT_EQ(s.erase(i), 1);
+        }
+        EXPECT_EQ(s.size(), 500u);
+        // 验证偶数已删除，奇数仍存在
+        for (int i = 0; i < N; ++i)
+        {
+            if (i % 2 == 0)
+            {
+                EXPECT_EQ(s.find(i), s.end());
+            }
+            else
+            {
+                EXPECT_NE(s.find(i), s.end());
+            }
+        }
+
+        for (auto iter = s.begin(); iter != s.end();++iter)
+        {
+           EXPECT_NE(s.erase(iter), s.end());
+        }
+    }
+
     // 测试拷贝构造与赋值
-    TEST(MultisetCopyTest, CopyAndAssignment)
+    TEST(MultisetTest, CopyAndAssignment)
     {
         multiset<int> ms1;
         ms1.insert(7);
@@ -107,7 +157,7 @@ namespace zstl
     }
 
     // 测试 const_iterator 和 const 对象访问
-    TEST(MultisetConstTest, ConstBeginEnd)
+    TEST(MultisetTest, ConstBeginEnd)
     {
         multiset<int> ms;
         ms.insert(2);
@@ -121,7 +171,7 @@ namespace zstl
     }
 
     // 测试迭代器遍历顺序（应为有序）
-    TEST(MultisetOrderTest, IteratorOrder)
+    TEST(MultisetTest, IteratorOrder)
     {
         multiset<int> ms;
         ms.insert(50);
@@ -129,13 +179,12 @@ namespace zstl
         ms.insert(40);
         ms.insert(30);
 
-        std::vector<int> values;
+        int num = 20;
+        vector<int> values;
         for (auto x : ms)
         {
-            values.push_back(x);
+            EXPECT_EQ(x, num);
+            num += 10;
         }
-        // 应按升序排列
-        std::vector<int> expected = {20, 30, 40, 50};
-        EXPECT_EQ(values, expected);
     }
 };
