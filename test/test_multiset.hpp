@@ -51,18 +51,20 @@ namespace zstl
     TEST(MultisetTest, EraseByKey)
     {
         multiset<int> ms;
-        ms.insert(1);
-        for (int i = 0; i < 1; i++)
+        ms.insert(0);
+        for (int i = 0; i < 10; i++)
         {
-            ms.insert(2);
+            for (int j = 1; j < 10; j++)
+                ms.insert(j);
         }
-        ms.insert(3);
+        ms.insert(10);
 
         // 删除所有值为 2 的元素
         size_t removed = ms.erase(2);
-        EXPECT_EQ(removed, 2);   // 应删除两个 2
-        EXPECT_EQ(ms.size(), 2); // 剩余元素数为 2
-        EXPECT_EQ(*ms.find(1), 1);
+        EXPECT_EQ(removed, 1000); // 应删除两个 2
+        EXPECT_EQ(ms.size(), 82);  // 剩余元素数为 2
+        EXPECT_EQ(*ms.find(1), 0);
+        EXPECT_EQ(*ms.find(3), 10);
         EXPECT_EQ(ms.find(2), ms.end()); // 找不到 2
     }
 
@@ -99,41 +101,37 @@ namespace zstl
     // 测试插入大量元素的稳定性
     TEST(MultisetTest, BulkInsertErase)
     {
-        multiset<int> s;
+        multiset<int> ss;
         const int N = 1000;
         for (int i = 0; i < N; ++i)
         {
-            s.insert(i);
+            ss.insert(i);
         }
-        EXPECT_EQ(s.size(), 1000u);
+        EXPECT_EQ(ss.size(), 1000u);
 
         // 验证所有元素都能找到
         for (int i = 0; i < N; ++i)
         {
-            EXPECT_NE(s.find(i), s.end());
+            EXPECT_NE(ss.find(i), ss.end());
         }
         // 删除偶数元素
         for (int i = 0; i < N; i += 2)
         {
-            EXPECT_EQ(s.erase(i), 1);
+            EXPECT_EQ(ss.erase(i), 1);
         }
-        EXPECT_EQ(s.size(), 500u);
+        EXPECT_EQ(ss.size(), 500u);
+
         // 验证偶数已删除，奇数仍存在
         for (int i = 0; i < N; ++i)
         {
             if (i % 2 == 0)
             {
-                EXPECT_EQ(s.find(i), s.end());
+                EXPECT_EQ(ss.find(i), ss.end());
             }
             else
             {
-                EXPECT_NE(s.find(i), s.end());
+                EXPECT_NE(ss.find(i), ss.end());
             }
-        }
-
-        for (auto iter = s.begin(); iter != s.end();++iter)
-        {
-           EXPECT_NE(s.erase(iter), s.end());
         }
     }
 

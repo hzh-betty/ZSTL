@@ -11,7 +11,7 @@ namespace zstl
             return key1 < key2;
         }
 
-        const K& operator()(const K &key1)
+        const K &operator()(const K &key1)
         {
             return key1;
         }
@@ -44,15 +44,51 @@ namespace zstl
         {
             return rb_tree_.end();
         }
+        iterator lower_bound(const K &k)
+        {
+            return rb_tree_.lower_bound(k);
+        }
+        const_iterator lower_bound(const K &k) const
+        {
+            return rb_tree_.lower_bound(k);
+        }
+        iterator upper_bound(const K &k)
+        {
+            return rb_tree_.upper_bound(k);
+        }
+        const_iterator upper_bound(const K &k) const
+        {
+            return rb_tree_.upper_bound(k);
+        }
+
+        std::pair<iterator, iterator> equal_range(const K &k)
+        {
+            return {lower_bound(k), upper_bound(k)};
+        }
+        
+        std::pair<const_iterator, const_iterator> equal_range(const K &k) const
+        {
+            return {lower_bound(k), upper_bound(k)};
+        }
+
+        iterator erase(const_iterator begin, const_iterator end)
+        {
+            return rb_tree_.erase(begin, end);
+        }
 
         std::pair<iterator, bool> insert(const K &val)
         {
             return rb_tree_.insert_unique(val);
         }
 
+        iterator erase(const_iterator pos)
+        {
+            return rb_tree_.erase(pos);
+        }
+        
         size_t erase(const K &key)
         {
-            return rb_tree_.erase(key) ? 1 : 0;
+            return rb_tree_.erase(key);
         }
 
         iterator find(const K &key) const
@@ -108,22 +144,50 @@ namespace zstl
             return rb_tree_.insert_duplicate(val).first;
         }
 
-        void erase(iterator pos)
+        iterator lower_bound(const K &k)
         {
-            rb_tree_.erase(pos);
+            return rb_tree_.lower_bound(k);
+        }
+        const_iterator lower_bound(const K &k) const
+        {
+            return rb_tree_.lower_bound(k);
+        }
+        iterator upper_bound(const K &k)
+        {
+            return rb_tree_.upper_bound(k);
+        }
+        const_iterator upper_bound(const K &k) const
+        {
+            return rb_tree_.upper_bound(k);
+        }
+
+        std::pair<iterator, iterator> equal_range(const K &k)
+        {
+            return {lower_bound(k), upper_bound(k)};
+        }
+
+        std::pair<const_iterator, const_iterator> equal_range(const K &k) const
+        {
+            return {lower_bound(k), upper_bound(k)};
+        }
+
+        iterator erase(const_iterator pos)
+        {
+            return rb_tree_.erase(pos);
+        }
+
+        iterator erase(const_iterator begin, const_iterator end)
+        {
+            return rb_tree_.erase(begin, end);
         }
 
         // 删除全部值为Key的元素
         size_t erase(const K &key)
         {
-            size_t count = 0;
-            iterator iter = find(key);
-            while (iter != end() && *iter == key)
-            {
-                iter = rb_tree_.erase(iter);
-                ++count;
-            }
-            return count;
+            auto p = equal_range(key);
+            const size_t old_size = size();
+            erase(p.first, p.second);
+            return old_size - size();
         }
 
         iterator find(const K &key) const

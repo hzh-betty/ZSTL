@@ -14,13 +14,13 @@ namespace zstl
         {
             return key1 < kv2.first;
         }
-        
+
         bool operator()(const std::pair<K, V> &kv1, const K &key2)
         {
             return kv1.first < key2;
         }
 
-        const K& operator()(const std::pair<K, V> &kv1)
+        const K &operator()(const std::pair<K, V> &kv1)
         {
             return kv1.first;
         }
@@ -59,7 +59,7 @@ namespace zstl
 
         size_t erase(const K &key)
         {
-            return rb_tree_.erase(key)?1:0;
+            return rb_tree_.erase(key);
         }
 
         iterator find(const K &key)

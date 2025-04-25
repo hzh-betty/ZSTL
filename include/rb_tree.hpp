@@ -33,17 +33,17 @@ namespace zstl
             : node_(node)
         {
         }
+
+        Self &operator=(const Self &it)
+        {
+            node_ = it.node_;
+            return *this;
+        }
+
         // 普通迭代器构造const迭代器
         RBTreeIterator(const RBTreeIterator<T, T &, T *> &it)
             : node_(it.node_)
         {
-        }
-
-        // 普通迭代器构造const迭代器
-        Self &operator=(const RBTreeIterator<T, T &, T *> &it)
-        {
-            node_ = it.node_;
-            return *this;
         }
 
         Ref operator*()
@@ -98,7 +98,7 @@ namespace zstl
         }
 
         // 后置++
-        Self &operator++(int)
+        Self operator++(int)
         {
             Self tmp(*this);
             ++(*this);
@@ -141,7 +141,7 @@ namespace zstl
         }
 
         // 后置++
-        Self &operator--(int)
+        Self operator--(int)
         {
             Self tmp(*this);
             --(*this);
@@ -208,136 +208,194 @@ namespace zstl
             }
             return *this;
         }
+        // lower_bound：第一个 ≥ k
+        iterator lower_bound(const K &k)
+        {
+            Compare com;
+            // 根节点
+            Node *cur = header_->parent_;
+            // 候选，初始为 header_（即 end()）
+            Node *res = header_;
+            while (cur)
+            {
+                if (com(cur->data_, k))
+                {
+                    // cur->data_ < k: 下界不可能在左子树
+                    cur = cur->right_;
+                }
+                else
+                {
+                    // cur->data_ >= k: 记录候选，继续往左找更小的 ≥ k
+                    res = cur;
+                    cur = cur->left_;
+                }
+            }
+            return iterator(res);
+        }
+
+        const_iterator lower_bound(const K &k) const
+        {
+            Compare com;
+            Node *cur = header_->parent_;
+            Node *res = header_;
+            while (cur)
+            {
+                if (com(cur->data_, k))
+                {
+                    cur = cur->right_;
+                }
+                else
+                {
+                    res = cur;
+                    cur = cur->left_;
+                }
+            }
+            return const_iterator(res);
+        }
+
+        // upper_bound：第一个 > k
+        iterator upper_bound(const K &k)
+        {
+            Compare com;
+            Node *cur = header_->parent_;
+            Node *res = header_;
+            while (cur)
+            {
+                if (com(k, cur->data_))
+                {
+                    // k < cur->data_: cur 是一个 > k 的候选
+                    res = cur;
+                    cur = cur->left_;
+                }
+                else
+                {
+                    // cur->data_ ≤ k: 跳过左侧
+                    cur = cur->right_;
+                }
+            }
+            return iterator(res);
+        }
+
+        const_iterator upper_bound(const K &k) const
+        {
+            Compare com;
+            Node *cur = header_->parent_;
+            Node *res = header_;
+            while (cur)
+            {
+                if (com(k, cur->data_))
+                {
+                    res = cur;
+                    cur = cur->left_;
+                }
+                else
+                {
+                    cur = cur->right_;
+                }
+            }
+            return const_iterator(res);
+        }
 
         // 插入节点--不支持重复插入
         std::pair<iterator, bool> insert_unique(const T &data)
         {
-            // 情况一：如果是根节点
-            Node *newnode = nullptr;
-            if (header_->parent_ == nullptr)
+            Node *parent = header_;
+            Node *cur = header_->parent_; // 根节点
+            Compare com;
+
+            // 1. 定位插入点 —— 重复时也走右支
+            while (cur)
             {
-                header_->parent_ = new Node(data);
-                header_->parent_->col_ = Color::BLACK;
-                header_->parent_->parent_ = header_;
-                header_->left_ = header_->right_ = header_->parent_;
-                size_++;
-                return std::make_pair(iterator(header_->parent_), true);
+                parent = cur;
+                if (com(data, cur->data_)) // data < cur->data_
+                    cur = cur->left_;
+                else if (com(cur->data_, data)) // data > cur->data_
+                    cur = cur->right_;
+                else
+                {
+                    return {iterator(cur), false};
+                }
+            }
+
+            // 2. 创建并挂接节点
+            Node *newnode = new Node(data);
+            newnode->parent_ = parent;
+            if (parent == header_)
+            {
+                // 树原为空，新节点即根
+                header_->parent_ = newnode;
+                header_->left_ = header_->right_ = newnode;
+            }
+            else if (com(data, parent->data_))
+            {
+                parent->left_ = newnode;
+                // 更新最小值指针
+                if (header_->left_ == parent)
+                    header_->left_ = newnode;
             }
             else
             {
-                Compare com;
-                Node *cur = header_->parent_;
-                Node *parent = nullptr;
-                while (cur)
-                {
-                    if (com(cur->data_, data))
-                    {
-                        parent = cur;
-                        cur = cur->right_;
-                    }
-                    else if (com(data, cur->data_))
-                    {
-                        parent = cur;
-                        cur = cur->left_;
-                    }
-                    else
-                    {
-                        return std::make_pair(iterator(cur), false);
-                    }
-                }
-                // 找到插入位置
-                cur = new Node(data);
-                if (com(data, header_->left_->data_))
-                {
-                    header_->left_ = cur;
-                }
-                else if (com(header_->right_->data_, data))
-                {
-                    header_->right_ = cur;
-                }
-
-                size_++;
-                newnode = cur;
-                if (com(parent->data_, data))
-                {
-                    parent->right_ = cur;
-                }
-                else
-                {
-                    parent->left_ = cur;
-                }
-                cur->parent_ = parent;
-
-                // 调整插入后的红黑树
-                adjust_insert(parent, cur);
-
-                // 防止情况三改到根节点变为红色
-                header_->parent_->col_ = Color::BLACK;
-                return std::make_pair(iterator(newnode), true);
+                parent->right_ = newnode;
+                // 更新最大值指针
+                if (header_->right_ == parent)
+                    header_->right_ = newnode;
             }
+            size_++;
+
+            // 3. 红黑树重平衡
+            adjust_insert(parent, newnode);
+            header_->parent_->col_ = Color::BLACK; // 保证根为黑
+
+            return {iterator(newnode), true};
         }
 
         // 插入节点--支持重复插入
         std::pair<iterator, bool> insert_duplicate(const T &data)
         {
-            // 情况一：如果是根节点
-            Node *newnode = nullptr;
-            if (header_->parent_ == nullptr)
+            Node *parent = header_;
+            Node *cur = header_->parent_; // 根节点
+            Compare com;
+
+            // 1. 定位插入点 —— 重复时也走右支
+            while (cur)
             {
-                header_->parent_ = new Node(data);
-                header_->parent_->col_ = Color::BLACK;
-                header_->parent_->parent_ = header_;
-                header_->left_ = header_->right_ = header_->parent_;
-                size_++;
-                return std::make_pair(iterator(header_->parent_), true);
+                parent = cur;
+                if (com(data, cur->data_)) // data < cur->data_
+                    cur = cur->left_;
+                else // data >= cur->data_
+                    cur = cur->right_;
+            }
+
+            // 2. 创建并挂接节点
+            Node *newnode = new Node(data);
+            newnode->parent_ = parent;
+            if (parent == header_)
+            {
+                // 树原为空，新节点即根
+                header_->parent_ = newnode;
+                header_->left_ = header_->right_ = newnode;
+            }
+            else if (com(data, parent->data_))
+            {
+                parent->left_ = newnode;
+                // 更新最小值指针
+                if (header_->left_ == parent)
+                    header_->left_ = newnode;
             }
             else
             {
-                Compare com;
-                Node *cur = header_->parent_;
-                Node *parent = nullptr;
-                while (cur)
-                {
-                    parent = cur;
-                    if (com(data, cur->data_))
-                    {
-                        cur = cur->left_;
-                    }
-                    else
-                    {
-                        cur = cur->right_;
-                    }
-                }
-                // 找到插入位置
-                cur = new Node(data);
-                if (com(data, header_->left_->data_))
-                {
-                    header_->left_ = cur;
-                }
-                else if (!com(data, header_->right_->data_))
-                {
-                    header_->right_ = cur;
-                }
-
-                size_++;
-                newnode = cur;
-                if (com(data, parent->data_))
-                {
-                    parent->left_ = cur;
-                }
-                else
-                {
-                    parent->right_ = cur;
-                }
-                cur->parent_ = parent;
-
-                // 调整插入后的红黑树
-                adjust_insert(parent, cur);
-
-                // 防止情况三改到根节点变为红色
-                header_->parent_->col_ = Color::BLACK;
-                return std::make_pair(iterator(newnode), true);
+                parent->right_ = newnode;
+                // 更新最大值指针
+                if (header_->right_ == parent)
+                    header_->right_ = newnode;
             }
+            size_++;
+
+            // 3. 红黑树重平衡
+            adjust_insert(parent, newnode);
+            header_->parent_->col_ = Color::BLACK; // 保证根为黑
+
+            return {iterator(newnode), true};
         }
 
         // 查找
@@ -366,160 +424,74 @@ namespace zstl
             return iterator(header_);
         }
 
-        // 删除函数
-        bool erase(const K &key)
+        iterator erase(const_iterator pos)
         {
-            Compare com;
-            Node *cur = header_->parent_;
-            Node *parent = nullptr;
-            // 用于标记实际的待删除结点及其父结点
-            Node *delParent = nullptr;
-            Node *delCur = nullptr;
+            iterator next = pos.node_;
+            ++next;
+            // 1. 计算中序后继，作为返回值
+            Node *target = pos.node_; // 待删除节点
+            Node *successor = next.node_;
 
-            // 找到删除节点
-            while (cur)
+            // 2. 定位待真正删除的节点 del and its parent delP
+            Node *del = nullptr, *delP = nullptr;
+            if (!target->left_ || !target->right_)
             {
-                if (com(key, cur->data_)) // 所给key值小于当前结点的key值
-                {
-                    // 往该结点的左子树走
-                    parent = cur;
-                    cur = cur->left_;
-                }
-                else if (com(cur->data_, key)) // 所给key值大于当前结点的key值
-                {
-                    // 往该结点的右子树走
-                    parent = cur;
-                    cur = cur->right_;
-                }
-                else
-                {
-
-                    if (cur->left_ == nullptr) // 待删除结点的左子树为空
-                    {
-                        if (cur == header_->parent_) // 待删除结点是根结点
-                        {
-                            header_->parent_ = header_->parent_->right_; // 让根结点的右子树作为新的根结点
-                            if (header_->parent_)
-                            {
-                                header_->parent_->parent_ = header_;
-                                header_->parent_->col_ = Color::BLACK; // 根结点为黑色
-                            }
-                            delete cur; // 删除原根结点
-                            --size_;
-                            adjust_header_pointers(header_->parent_);
-                            return true;
-                        }
-                        else
-                        {
-                            delParent = parent; // 标记实际删除结点的父结点
-                            delCur = cur;       // 标记实际删除的结点
-                        }
-                        break;
-                    }
-                    else if (cur->right_ == nullptr) // 待删除结点的右子树为空
-                    {
-                        if (cur == header_->parent_) // 待删除结点是根结点
-                        {
-                            header_->parent_ = header_->parent_->left_; // 让根结点的左子树作为新的根结点
-                            if (header_->parent_)
-                            {
-                                header_->parent_->parent_ = header_;
-                                header_->parent_->col_ = Color::BLACK; // 根结点为黑色
-                            }
-                            delete cur; // 删除原根结点
-                            --size_;
-                            adjust_header_pointers(header_->parent_);
-                            return true;
-                        }
-                        else
-                        {
-                            delParent = parent; // 标记实际删除结点的父结点
-                            delCur = cur;       // 标记实际删除的结点
-                        }
-                        break;
-                    }
-                    else // 待删除结点的左右子树均不为空
-                    {
-                        // 替换法删除
-                        // 寻找待删除结点右子树当中key值最小的结点作为实际删除结点
-                        Node *minParent = cur;
-                        Node *minRight = cur->right_;
-                        while (minRight->left_)
-                        {
-                            minParent = minRight;
-                            minRight = minRight->left_;
-                        }
-
-                        // 原本直接可以赋值
-                        // cur->_value = minRight->_value
-                        // 将待删除结点的键值改为minRight的键值
-                        Node *newnode = new Node(minRight->data_, cur->col_);
-                        Node *parent = cur->parent_;
-
-                        // 重新链接祖父孙三代节点关系
-                        cur->left_->parent_ = newnode;
-                        cur->right_->parent_ = newnode;
-                        if (parent != header_)
-                        {
-                            if (parent->left_ == cur)
-                            {
-                                parent->left_ = newnode;
-                            }
-                            else
-                            {
-                                parent->right_ = newnode;
-                            }
-                        }
-                        else
-                        {
-                            // 如果是根节点
-                            header_->parent_ = newnode;
-                        }
-                        newnode->parent_ = parent;
-                        newnode->left_ = cur->left_;
-                        newnode->right_ = cur->right_;
-
-                        // 如果minParent是cur
-                        if (minParent == cur)
-                        {
-                            minParent = newnode;
-                        }
-
-                        delete cur;
-                        delParent = minParent; // 标记实际删除的父节点
-                        delCur = minRight;     // 标记实际删除的结点
-                        break;
-                    }
-                }
+                // 度0或1：直接删除 target
+                del = target;
+                delP = target->parent_;
+            }
+            else
+            {
+                // 情况 B/双子：交换数据后，将后继节点（必为半叶）设为删除对象
+                T data = successor->data_;
+                swap_delete_node(target->data_, data); // 只交换键值
+                del = successor;
+                delP = successor->parent_;
+                next = iterator(pos.node_);
             }
 
-            if (delCur == nullptr)
-            {
-                return false;
-            }
+            // 3. 红黑树删除调整
+            Node *del_node = del;
+            Node *del_node_parent = delP;
+            adjust_erase(del, delP);                // 恢复红黑性质
+            delete_node(del_node, del_node_parent); // 实际摘除节点并释放
 
-            // 记录待删除结点及其父结点，便于后面删除
-            Node *del = delCur;
-            Node *delP = delParent;
-
-            //(二)调整红黑树
-            adjust_erase(delCur, delParent);
-
-            //(三)进行实际删除
-            delete_node(del, delP);
-            --size_;
-
+            // 4. 更新 header 的最小/最大指针（若有）
             adjust_header_pointers(header_->parent_);
-            return true;
+
+            // 5. 返回先前保存的后继
+            return next;
         }
 
-        const_iterator erase(const_iterator pos)
+        iterator erase(const_iterator first, const_iterator last)
         {
-            Compare com;
-            const K &key = com(*pos);
-            ++pos;
-            erase(key);
-            return pos;
+            // 如果删除整个树，直接 clear
+            if (first == begin() && last == end())
+            {
+                clear();
+                return end();
+            }
+
+            // 否则逐节点删除
+            while (first != last)
+            {
+                const_iterator cur = first++;
+                const_iterator ret = erase(cur);
+                if (ret != first && first != last)
+                {
+                    first = ret;
+                }
+            }
+            return iterator(last.node_); // 返回下一个有效迭代器
+        }
+
+        size_t erase(const K &key)
+        {
+            const_iterator iter = find(key);
+            if (iter == end())
+                return 0;
+            erase(iter);
+            return 1;
         }
 
         // 获取有效数据个数
@@ -551,6 +523,22 @@ namespace zstl
         }
 
     private:
+        template <typename L, typename R>
+        void swap_delete_node(std::pair<const L, R> &a, std::pair<const L, R> &b)
+        {
+            // 交换 const key —— const_cast 是常见 hack
+            std::swap(const_cast<L &>(a.first), const_cast<L &>(b.first));
+            // 交换 mapped value
+            std::swap(a.second, b.second);
+        }
+
+        template <typename L>
+        void swap_delete_node(L &a, L &b)
+        {
+            // 交换 const key —— const_cast 是常见 hack
+            std::swap(const_cast<L &>(a), const_cast<L &>(b));
+        }
+
         // 右旋
         void RotateR(Node *parent)
         {
@@ -630,82 +618,111 @@ namespace zstl
         }
 
         // 插入调整
-        void adjust_insert(Node *parent, Node *cur)
+        void adjust_insert(Node *del_pos, Node *del_parent_pos)
         {
-            while (parent != header_ && parent->col_ == Color::RED)
+            // 调整红黑树
+            if (del_pos->col_ == Color::BLACK) // 删除的是黑色结点
             {
-                Node *grandfather = parent->parent_;
-                if (parent == grandfather->left_)
+                if (del_pos->left_) // 待删除结点有一个红色的左孩子（不可能是黑色）
                 {
-                    Node *uncle = grandfather->right_;
-                    // 情况三：如果叔叔存在且为红
-                    if (uncle && uncle->col_ == Color::RED)
-                    {
-                        parent->col_ = uncle->col_ = Color::BLACK;
-                        grandfather->col_ = Color::RED;
-                        cur = grandfather;
-                        parent = cur->parent_;
-                    }
-                    else
-                    {
-                        // 情况四：叔叔不存在/存在且为黑，且cur在parent的左侧
-                        if (cur == parent->left_)
-                        {
-                            //     g
-                            //   p   u
-                            // c
-                            RotateR(grandfather);
-                            parent->col_ = Color::BLACK;
-                            grandfather->col_ = Color::RED;
-                        }
-                        else // 情况五：叔叔不存在 / 存在且为黑，cur在parent的右侧
-                        {
-                            //     g
-                            //   p   u
-                            //     c
-                            RotateLR(grandfather);
-                            cur->col_ = Color::BLACK;
-                            grandfather->col_ = Color::RED;
-                        }
-                        // 这时该子树的根节点变为黑色，不需要继续调整
-                        break;
-                    }
+                    del_pos->left_->col_ = Color::BLACK; // 将这个红色的左孩子变黑即可
                 }
-                else
+                else if (del_pos->right_) // 待删除结点有一个红色的右孩子（不可能是黑色）
                 {
-                    Node *uncle = grandfather->left_;
-                    // 情况三：如果叔叔存在且为红
-                    if (uncle && uncle->col_ == Color::RED)
+                    del_pos->right_->col_ = Color::BLACK; // 将这个红色的右孩子变黑即可
+                }
+                else // 待删除结点的左右均为空
+                {
+                    while (del_pos != header_->parent_) // 可能一直调整到根结点
                     {
-                        parent->col_ = uncle->col_ = Color::BLACK;
-                        grandfather->col_ = Color::RED;
-                        // 继续调整
-                        cur = grandfather;
-                        parent = cur->parent_;
-                    }
-                    else
-                    {
-                        // 情况四：叔叔不存在/存在且为黑，且cur在parent的左侧
-                        if (cur == parent->right_)
+                        if (del_pos == del_parent_pos->left_) // 待删除结点是其父结点的左孩子
                         {
-                            //    g
-                            //  u   p
-                            //        c
-                            RotateL(grandfather);
-                            parent->col_ = Color::BLACK;
-                            grandfather->col_ = Color::RED;
+                            Node *brother = del_parent_pos->right_; // 兄弟结点是其父结点的右孩子
+                            // 情况一：brother为红色
+                            if (brother->col_ == Color::RED)
+                            {
+                                del_parent_pos->col_ = Color::RED;
+                                brother->col_ = Color::BLACK;
+                                RotateL(del_parent_pos);
+                                // 需要继续处理
+                                brother = del_parent_pos->right_; // 更新brother（否则在本循环中执行其他情况的代码会出错）
+                            }
+                            // 情况二：brother为黑色，且其左右孩子都是黑色结点或为空
+                            if (((brother->left_ == nullptr) || (brother->left_->col_ == Color::BLACK)) && ((brother->right_ == nullptr) || (brother->right_->col_ == Color::BLACK)))
+                            {
+                                brother->col_ = Color::RED;
+                                if (del_parent_pos->col_ == Color::RED)
+                                {
+                                    del_parent_pos->col_ = Color::BLACK;
+                                    break;
+                                }
+                                // 需要继续处理
+                                del_pos = del_parent_pos;
+                                del_parent_pos = del_pos->parent_;
+                            }
+                            else
+                            {
+                                // 情况三：brother为黑色，且其左孩子是红色结点，右孩子是黑色结点或为空
+                                if ((brother->right_ == nullptr) || (brother->right_->col_ == Color::BLACK))
+                                {
+                                    brother->left_->col_ = Color::BLACK;
+                                    brother->col_ = Color::RED;
+                                    RotateR(brother);
+                                    // 需要继续处理
+                                    brother = del_parent_pos->right_; // 更新brother（否则执行下面情况四的代码会出错）
+                                }
+                                // 情况四：brother为黑色，且其右孩子是红色结点
+                                brother->col_ = del_parent_pos->col_;
+                                del_parent_pos->col_ = Color::BLACK;
+                                brother->right_->col_ = Color::BLACK;
+                                RotateL(del_parent_pos);
+                                break; // 情况四执行完毕后调整一定结束
+                            }
                         }
-                        else // 情况五：叔叔不存在 / 存在且为黑，cur在parent的右侧
+                        else // del_pos == del_parent_pos->right_ //待删除结点是其父结点的左孩子
                         {
-                            //    g
-                            //  u   p
-                            //    c
-                            RotateRL(grandfather);
-                            cur->col_ = Color::BLACK;
-                            grandfather->col_ = Color::RED;
+                            Node *brother = del_parent_pos->left_; // 兄弟结点是其父结点的左孩子
+                            // 情况一：brother为红色
+                            if (brother->col_ == Color::RED) // brother为红色
+                            {
+                                del_parent_pos->col_ = Color::RED;
+                                brother->col_ = Color::BLACK;
+                                RotateR(del_parent_pos);
+                                // 需要继续处理
+                                brother = del_parent_pos->left_; // 更新brother（否则在本循环中执行其他情况的代码会出错）
+                            }
+                            // 情况二：brother为黑色，且其左右孩子都是黑色结点或为空
+                            if (((brother->left_ == nullptr) || (brother->left_->col_ == Color::BLACK)) && ((brother->right_ == nullptr) || (brother->right_->col_ == Color::BLACK)))
+                            {
+                                brother->col_ = Color::RED;
+                                if (del_parent_pos->col_ == Color::RED)
+                                {
+                                    del_parent_pos->col_ = Color::BLACK;
+                                    break;
+                                }
+                                // 需要继续处理
+                                del_pos = del_parent_pos;
+                                del_parent_pos = del_pos->parent_;
+                            }
+                            else
+                            {
+                                // 情况三：brother为黑色，且其右孩子是红色结点，左孩子是黑色结点或为空
+                                if ((brother->left_ == nullptr) || (brother->left_->col_ == Color::BLACK))
+                                {
+                                    brother->right_->col_ = Color::BLACK;
+                                    brother->col_ = Color::RED;
+                                    RotateL(brother);
+                                    // 需要继续处理
+                                    brother = del_parent_pos->left_; // 更新brother（否则执行下面情况四的代码会出错）
+                                }
+                                // 情况四：brother为黑色，且其左孩子是红色结点
+                                brother->col_ = del_parent_pos->col_;
+                                del_parent_pos->col_ = Color::BLACK;
+                                brother->left_->col_ = Color::BLACK;
+                                RotateR(del_parent_pos);
+                                break; // 情况四执行完毕后调整一定结束
+                            }
                         }
-                        // 这时该子树的根节点变为黑色，不需要继续调整
-                        break;
                     }
                 }
             }
@@ -714,7 +731,18 @@ namespace zstl
         // 删除节点
         void delete_node(Node *del, Node *delP)
         {
-            if (del->left_ == nullptr) // 实际删除结点的左子树为空
+            // 根节点被删：直接将唯一子节点提到根
+            if (del == header_->parent_)
+            {
+                Node *child = del->left_ ? del->left_ : del->right_;
+                header_->parent_ = child;
+                if (child)
+                {
+                    child->parent_ = header_;
+                    child->col_ = Color::BLACK;
+                }
+            }
+            else if (del->left_ == nullptr) // 实际删除结点的左子树为空
             {
                 if (del == delP->left_) // 实际删除结点是其父结点的左孩子
                 {
@@ -746,6 +774,7 @@ namespace zstl
                 }
             }
             delete del; // 实际删除结点
+            --size_;
         }
 
         // 删除调整

@@ -49,13 +49,46 @@ namespace zstl
         s.insert(2);
         EXPECT_EQ(s.size(), 2u);
         // 删除存在的元素应返回并移除
-        EXPECT_EQ(s.erase(1),1);
+        EXPECT_EQ(s.erase(1), 1);
         EXPECT_EQ(s.find(1), s.end());
         // 删除不存在的元素应返回false
-        EXPECT_EQ(s.erase(99),0);
+        EXPECT_EQ(s.erase(99), 0);
         EXPECT_EQ(s.size(), 1);
     }
 
+    // 范围删除测试
+    TEST(SetTest, EraseRange)
+    {
+        set<int> s;
+        for (int i = 0; i < 100; ++i)
+            s.insert(i);
+        auto it1 = s.lower_bound(1);
+        EXPECT_EQ(*it1, 1);
+        auto it2 = s.upper_bound(98);
+        EXPECT_EQ(*it2, 99);
+        auto ret = s.erase(it1, it2);
+        EXPECT_EQ(*ret, 99); // 返回 first not erased
+
+        auto iter = s.begin();
+        EXPECT_EQ(*iter, 0);
+        ++iter;
+        EXPECT_EQ(*iter, 99);
+    }
+
+    // 边界操作
+    TEST(SetTest, BoundsAndEqualRange)
+    {
+        set<int> s;
+        for (int x : {10, 20, 30, 40})
+            s.insert(x);
+        EXPECT_EQ(*s.lower_bound(25), 30);
+        EXPECT_EQ(s.lower_bound(100), s.end());
+        EXPECT_EQ(*s.upper_bound(20), 30);
+        EXPECT_EQ(s.upper_bound(40), s.end());
+        auto range = s.equal_range(20);
+        EXPECT_EQ(*range.first, 20);
+        EXPECT_EQ(*range.second, 30);
+    }
     // 测试有序遍历
     TEST(SetTest, OrderedTraversal)
     {
@@ -104,7 +137,7 @@ namespace zstl
         {
             s.insert(i);
         }
-        EXPECT_EQ(s.size(), 1000u); 
+        EXPECT_EQ(s.size(), 1000u);
 
         // 验证所有元素都能找到
         for (int i = 0; i < N; ++i)
@@ -114,19 +147,20 @@ namespace zstl
         // 删除偶数元素
         for (int i = 0; i < N; i += 2)
         {
-            EXPECT_TRUE(s.erase(i));
+            EXPECT_EQ(s.erase(i), 1);
         }
-        EXPECT_EQ(s.size(), 500u); 
+        EXPECT_EQ(s.size(), 500u);
         // 验证偶数已删除，奇数仍存在
         for (int i = 0; i < N; ++i)
         {
+            auto iter = s.find(i);
             if (i % 2 == 0)
             {
-                EXPECT_EQ(s.find(i), s.end());
+                EXPECT_EQ(iter, s.end());
             }
             else
             {
-                EXPECT_NE(s.find(i), s.end());
+                EXPECT_NE(iter, s.end());
             }
         }
     }
