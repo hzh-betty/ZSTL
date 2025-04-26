@@ -112,21 +112,21 @@ namespace zstl
         ms.insert(0);
         for (int i = 1; i <= 10; i++)
         {
-            for (int j = 1; j <= 10; j++)
+            for (int j = 1; j <= 100; j++)
             {
                 ms.insert(j);
             }
         }
 
-        ms.insert(11);
+        ms.insert(101);
 
         // 删除所有值为 2 的元素
         size_t removed = ms.erase(2);
 
-        EXPECT_EQ(removed, 10);   // 应删除10个2
-        EXPECT_EQ(ms.size(), 92); // 剩余元素数为 922
-        EXPECT_EQ(*ms.find(0), 0);
-        EXPECT_EQ(*ms.find(11), 11);
+        EXPECT_EQ(removed, 10);   // 应删除100个2
+        EXPECT_EQ(ms.size(), 992); // 剩余元素数为 902
+        EXPECT_EQ(*ms.begin(), 0);
+        EXPECT_EQ(*(--ms.end()), 101);
         EXPECT_EQ(ms.find(2), ms.end()); // 找不到 2
     }
 

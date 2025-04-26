@@ -8,6 +8,7 @@
 #include "test_set.hpp"
 #include "test_map.hpp"
 #include "test_multiset.hpp"
+#include "test_multimap.hpp"
 #include "test_unordered_set.hpp"
 #include "test_unordered_map.hpp"
 

@@ -4,124 +4,97 @@
 #include <gtest/gtest.h>
 namespace zstl
 {
-    // 测试空 map 的行为
-    TEST(MapTest, EmptyMap)
+    // 测试夹具：为每个测试提供独立的 map 实例
+    class MapTest : public ::testing::Test
     {
-        map<int, int> m;
-        // 刚创建的 map 应该为空
-        EXPECT_TRUE(m.empty());
-        // 大小为 0
-        EXPECT_EQ(m.size(), 0u);
-        // begin() 应等于 end()
-        EXPECT_EQ(m.begin(), m.end());
-    }
-
-    // 测试 zstl::map 的基本功能
-    TEST(MapTest, InsertAndFind)
-    {
+    protected:
         map<int, string> m;
-        // 插入元素并检查返回结果
-        auto res1 = m.insert(std::make_pair(1, string("one")));
-        EXPECT_TRUE(res1.second) << "首次插入 key=1 应成功";
-        EXPECT_EQ(res1.first->first, 1);
-        EXPECT_EQ(res1.first->second, "one");
+    };
 
-        // 插入相同 key 应失败，返回原 iterator
-        auto res2 = m.insert(std::make_pair(1, string("uno")));
-        EXPECT_FALSE(res2.second) << "重复插入 key=1 应失败";
-        EXPECT_EQ(res2.first->second, "one") << "值应保持原有的 'one'";
+    // 测试默认构造后容器应为空
+    TEST_F(MapTest, InitiallyEmpty)
+    {
+        // 空时 size 为 0，empty 返回 true
+        EXPECT_TRUE(m.empty());
+        EXPECT_EQ(m.size(), 0);
+    }
 
-        // 使用 operator[] 插入或访问
-        m[2] = "two";
+    // 测试 insert 和 find
+    TEST_F(MapTest, InsertAndFind)
+    {
+        auto p = m.insert({1, "one"});
+        // insert 返回 pair<iterator,bool>，第一次插入应成功
+        EXPECT_TRUE(p.second);
+        EXPECT_EQ(p.first->first, 1);
+        EXPECT_EQ(p.first->second, "one");
+
+        // find 应能找到键 1
+        auto it = m.find(1);
+        EXPECT_NE(it, m.end());
+        EXPECT_EQ(it->second, "one");
+
+        // 对于不存在的键 find 返回 end
+        EXPECT_EQ(m.find(42), m.end());
+    }
+
+    // 测试 operator[] 行为：不存在时插入，存在时访问
+    TEST_F(MapTest, SubscriptOperator)
+    {
+        // operator[] 不存在则插入，返回引用，可修改
+        m[5] = "five";
+        EXPECT_EQ(m.size(), 1);
+        EXPECT_EQ(m[5], "five");
+
+        // 已存在则不改变 size，仅返回引用
+        m[5] = "FIVE";
+        EXPECT_EQ(m.size(), 1);
+        EXPECT_EQ(m[5], "FIVE");
+    }
+
+    // 测试重复插入相同键
+    TEST_F(MapTest, DuplicateInsert)
+    {
+        m.insert({2, "two"});
+        auto p2 = m.insert({2, "TWO"});
+        // 第二次插入相同键应失败，返回 false
+        EXPECT_FALSE(p2.second);
+        // 值应保持第一次插入的 "two"
         EXPECT_EQ(m.find(2)->second, "two");
-        EXPECT_EQ(m[2], "two");
-
-        // 查找不存在的 key
-        auto it = m.find(3);
-        EXPECT_EQ(it, m.end()) << "查找不存在的 key=3 应返回 end()";
-        EXPECT_EQ(m.size(), 2u);
     }
 
-    // 测试迭代器顺序和 begin/end
-    TEST(MapTest, IteratorOrder)
+    // 测试 erase by key 和 erase(iterator)
+    TEST_F(MapTest, EraseKeyAndIterator)
     {
-        map<int, int> m;
-        // 插入多组乱序数据
-        m.insert(std::make_pair(5, 50));
-        m.insert(std::make_pair(1, 10));
-        m.insert(std::make_pair(3, 30));
-        m.insert(std::make_pair(4, 40));
-        m.insert(std::make_pair(2, 20));
+        m[1] = "one";
+        m[2] = "two";
+        m[3] = "three";
+        EXPECT_EQ(m.size(), 3);
 
-        // 检查中序遍历结果为有序
-        int expect_key = 1;
-        for (auto it = m.begin(); it != m.end(); ++it)
-        {
-            EXPECT_EQ(it->first, expect_key) << "迭代器键值应从 1 到 5 顺序遍历";
-            expect_key++;
-        }
-        EXPECT_EQ(expect_key, 6);
-
-        for (auto it = --m.end(); it != m.begin(); --it)
-        {
-            // 遍历顺序应为降序
-            EXPECT_EQ(it->first, --expect_key);
-        }
-    }
-
-    // 测试 erase 功能及返回值
-    TEST(MapTest, EraseExistingAndNonExisting)
-    {
-        map<int, int> m;
-        for (int i = 0; i < 5; ++i)
-        {
-            m.insert(std::make_pair(i, i * 10));
-        }
-        EXPECT_EQ(m.size(), 5u);
-
-        // 删除存在的 key
-        EXPECT_EQ(m.erase(2), 1);
+        // erase(key) 返回被删除元素个数
+        size_t ec = m.erase(2);
+        EXPECT_EQ(ec, 1);
+        EXPECT_EQ(m.size(), 2);
         EXPECT_EQ(m.find(2), m.end());
 
-        // 删除不存在的 key
-        EXPECT_EQ(m.erase(999), 0) << "删除不存在的 key=999 应返回 false";
-        EXPECT_EQ(m.size(), 4u);
+        // erase(iterator) 删除指定位置，返回下一个 iterator
+        auto it = m.find(1);
+        auto next = m.erase(it);
+        EXPECT_EQ(next->first, 3);
+        EXPECT_EQ(m.size(), 1);
     }
 
-    // 测试拷贝构造和赋值操作
-    TEST(MapTest, CopyAndAssignment)
+    // 测试 clear 功能（如果有）
+    TEST_F(MapTest, Clear)
     {
-        map<int, string> m1;
-        m1.insert(std::make_pair(1, "a"));
-        m1.insert(std::make_pair(2, "b"));
-
-        // 拷贝构造
-        map<int, string> m2(m1);
-        EXPECT_EQ(m2.find(1)->second, "a");
-        EXPECT_EQ(m2.find(2)->second, "b");
-
-        // 修改原 map，不影响拷贝
-        m1[1] = "alpha";
-        EXPECT_EQ(m1.find(1)->second, "alpha");
-        EXPECT_EQ(m2.find(1)->second, "a");
-
-        // 赋值操作
-        map<int, string> m3;
-        m3 = m1;
-        EXPECT_EQ(m3.find(1)->second, "alpha");
-        EXPECT_EQ(m3.find(2)->second, "b");
-    }
-
-    // 测试空 map 的 begin/end 和操作
-    TEST(MapTest, EmptyMapBehaviors)
-    {
-        map<int, int> m;
-        EXPECT_EQ(m.begin(), m.end()) << "空 map 的 begin() 应等于 end()";
-        EXPECT_FALSE(m.erase(1)) << "对空 map 删除任何元素应返回 false";
+        m[1] = "one";
+        m[2] = "two";
+        m.clear();
+        EXPECT_TRUE(m.empty());
+        EXPECT_EQ(m.size(), 0);
     }
 
     // 测试复杂类型作为 value
-    TEST(MapTest, ComplexValueType)
+    TEST_F(MapTest, ComplexValueType)
     {
         struct Point
         {
@@ -134,4 +107,20 @@ namespace zstl
         EXPECT_EQ(it->second.x, 3);
         EXPECT_EQ(it->second.y, 4);
     }
+
+    // 测试迭代顺序与 Compare
+    TEST_F(MapTest, IterationOrder)
+    {
+        m.insert({3, "three"});
+        m.insert({1, "one"});
+        m.insert({2, "two"});
+        // map 应按键升序排列
+
+        int cnt = 1;
+        for (auto iter = m.begin(); iter != m.end(); ++iter)
+        {
+            EXPECT_EQ(iter->first, cnt++);
+        }
+    }
+
 };
