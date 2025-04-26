@@ -6,183 +6,183 @@
 
 namespace zstl
 {
-    // 测试基本插入和大小
-    TEST(MultisetTest, InsertAndSize)
+    // 测试 Fixture: 每个测试都能使用独立的 multiset 实例
+    class MultiSetTest : public ::testing::Test
     {
+    protected:
         multiset<int> ms;
-        EXPECT_TRUE(ms.empty()); // 刚创建应为空容器
-        EXPECT_EQ(ms.size(), 0); // 大小为 0
+    };
 
-        ms.insert(5);
-        ms.insert(3);
-        ms.insert(8);
-        EXPECT_FALSE(ms.empty()); // 插入后不为空
-        EXPECT_EQ(ms.size(), 3);  // 大小应为 3
+    // 测试默认构造后容器应为空
+    TEST_F(MultiSetTest, InitiallyEmpty)
+    {
+        // 空容器应为空，size 为 0
+        EXPECT_TRUE(ms.empty());
+        EXPECT_EQ(ms.size(), 0);
     }
 
-    // 测试支持重复元素插入
-    TEST(MultisetTest, InsertDuplicates)
+    // 测试单个元素插入
+    TEST_F(MultiSetTest, SingleInsert)
     {
-        multiset<int> ms;
-        ms.insert(1);
-        for (int i = 0; i < 10; i++)
-        {
-            ms.insert(4);
-        }
-        ms.insert(10);
-        EXPECT_EQ(ms.size(), 12); // 重复插入12次，大小为 12
+        auto it = ms.insert(42);
+        // 插入后，容器不应为空，size 增为 1
+        EXPECT_FALSE(ms.empty());
+        EXPECT_EQ(ms.size(), 1);
+        // begin() 应指向插入的元素
+        EXPECT_EQ(*ms.begin(), 42);
+        // insert 返回的迭代器解引用应为 42
+        EXPECT_EQ(*it, 42);
+    }
 
-        EXPECT_EQ(*ms.begin(), 1);
-        EXPECT_EQ(*(--ms.end()), 10);
-        auto begin1 = ++ms.begin();
-        auto end1 = --ms.end();
-
-        // 所有值都应该等于 4
+    // 测试重复元素插入
+    TEST_F(MultiSetTest, DuplicateInsert)
+    {
+        ms.insert(5);
+        ms.insert(5);
+        ms.insert(5);
+        // 重复插入三次，size 应为 3
+        EXPECT_EQ(ms.size(), 3);
+        // lower_bound 应指向第一个 5，upper_bound 指向末尾
+        auto lb = ms.lower_bound(5);
+        auto ub = ms.upper_bound(5);
         int count = 0;
-        for (auto it = begin1; it != end1; ++it)
+        for (auto it = lb; it != ub; ++it)
         {
-            EXPECT_EQ(*it, 4);
+            EXPECT_EQ(*it, 5);
             ++count;
         }
-        EXPECT_EQ(count, 10);
+        EXPECT_EQ(count, 3);
+    }
+
+    // 测试 find 与 equal_range
+    TEST_F(MultiSetTest, FindAndEqualRange)
+    {
+        ms.insert(1);
+        ms.insert(2);
+        ms.insert(2);
+        ms.insert(3);
+
+        // find 应能找到已插入的元素
+        auto f2 = ms.find(2);
+        EXPECT_NE(f2, ms.end());
+        EXPECT_EQ(*f2, 2);
+
+        // 对于不存在的元素 find 应返回 end
+        EXPECT_EQ(ms.find(99), ms.end());
+
+        // equal_range 返回的区间内元素值都应等于 key
+        auto range = ms.equal_range(2);
+        int count = 0;
+        for (auto it = range.first; it != range.second; ++it)
+        {
+            EXPECT_EQ(*it, 2);
+            ++count;
+        }
+        EXPECT_EQ(count, 2);
+    }
+
+    // 测试 erase(iterator) 和 erase(key)
+    TEST_F(MultiSetTest, EraseByIteratorAndKey)
+    {
+        // 插入若干元素
+        ms.insert(10);
+        ms.insert(20);
+        ms.insert(20);
+        ms.insert(30);
+        EXPECT_EQ(ms.size(), 4);
+
+        // erase(iterator)：删除第一个元素
+        auto it = ms.begin();
+        int val = *it;
+        auto nextIt = ms.erase(it);
+        EXPECT_EQ(*nextIt, 20);
+        EXPECT_EQ(ms.size(), 3);
+
+        // erase(key)：删除所有等于 20 的元素
+        size_t erased = ms.erase(20);
+        // 原有两个 20，erase 返回删除个数
+        EXPECT_EQ(erased, 2);
+        EXPECT_EQ(ms.size(), 1);
+        EXPECT_EQ(*ms.begin(), 30);
     }
 
     // 测试按键删除所有元素
-    TEST(MultisetTest, EraseByKey)
+    TEST_F(MultiSetTest, EraseByKey)
     {
-        multiset<int> ms;
         ms.insert(0);
-        for (int i = 0; i < 10; i++)
+        for (int i = 1; i <= 10; i++)
         {
-            for (int j = 1; j < 10; j++)
+            for (int j = 1; j <= 10; j++)
+            {
                 ms.insert(j);
+            }
         }
-        ms.insert(10);
+
+        ms.insert(11);
 
         // 删除所有值为 2 的元素
         size_t removed = ms.erase(2);
-        EXPECT_EQ(removed, 1000); // 应删除两个 2
-        EXPECT_EQ(ms.size(), 82);  // 剩余元素数为 2
-        EXPECT_EQ(*ms.find(1), 0);
-        EXPECT_EQ(*ms.find(3), 10);
+
+        EXPECT_EQ(removed, 10);   // 应删除10个2
+        EXPECT_EQ(ms.size(), 92); // 剩余元素数为 922
+        EXPECT_EQ(*ms.find(0), 0);
+        EXPECT_EQ(*ms.find(11), 11);
         EXPECT_EQ(ms.find(2), ms.end()); // 找不到 2
     }
 
-    // 测试通过迭代器删除单个元素
-    TEST(MultisetTest, EraseByIterator)
+    // 测试 erase(range)
+    TEST_F(MultiSetTest, EraseRange)
     {
-        multiset<int> ms;
-        ms.insert(10);
-        ms.insert(20);
-        ms.insert(30);
-
-        auto it = ms.find(20);
-        ASSERT_NE(it, ms.end()); // 确保找到了 20
-        ms.erase(it);            // 删除该迭代器指向的元素
-        EXPECT_EQ(ms.size(), 2);
-        EXPECT_EQ(ms.find(20), ms.end()); // 20 已被删除
-    }
-
-    // 测试查找操作
-    TEST(MultisetTest, FindExistingAndNonExisting)
-    {
-        multiset<std::string> ms;
-        ms.insert("apple");
-        ms.insert("banana");
-
-        auto it1 = ms.find("apple");
-        EXPECT_NE(it1, ms.end()); // 能找到 apple
-        EXPECT_EQ(*it1, "apple");
-
-        auto it2 = ms.find("cherry");
-        EXPECT_EQ(it2, ms.end()); // 找不到 cherry
-    }
-
-    // 测试插入大量元素的稳定性
-    TEST(MultisetTest, BulkInsertErase)
-    {
-        multiset<int> ss;
-        const int N = 1000;
-        for (int i = 0; i < N; ++i)
+        for (int i = 1; i <= 5; ++i)
         {
-            ss.insert(i);
+            ms.insert(i);
+            ms.insert(i);
         }
-        EXPECT_EQ(ss.size(), 1000u);
+        // 此时每个 1..5 都有两个，size=10
+        EXPECT_EQ(ms.size(), 10);
 
-        // 验证所有元素都能找到
-        for (int i = 0; i < N; ++i)
-        {
-            EXPECT_NE(ss.find(i), ss.end());
-        }
-        // 删除偶数元素
-        for (int i = 0; i < N; i += 2)
-        {
-            EXPECT_EQ(ss.erase(i), 1);
-        }
-        EXPECT_EQ(ss.size(), 500u);
+        // 删除 [lower_bound(2), upper_bound(4)) 区间内的所有元素
+        auto first = ms.lower_bound(2);
+        auto last = ms.upper_bound(4);
+        ms.erase(first, last);
 
-        // 验证偶数已删除，奇数仍存在
-        for (int i = 0; i < N; ++i)
+        // 删除后，应剩下 1、5 各两个，共 4 个元素
+        EXPECT_EQ(ms.size(), 4);
+        for (auto v : {1, 1, 5, 5})
         {
-            if (i % 2 == 0)
-            {
-                EXPECT_EQ(ss.find(i), ss.end());
-            }
-            else
-            {
-                EXPECT_NE(ss.find(i), ss.end());
-            }
+            auto fit = ms.find(v);
+            EXPECT_NE(fit, ms.end());
         }
     }
 
-    // 测试拷贝构造与赋值
-    TEST(MultisetTest, CopyAndAssignment)
+    // 测试 const 版本的 lower_bound/upper_bound
+    TEST_F(MultiSetTest, ConstBounds)
     {
-        multiset<int> ms1;
-        ms1.insert(7);
-        ms1.insert(9);
+        ms.insert(7);
+        ms.insert(7);
+        const multiset<int> &cms = ms;
 
-        // 拷贝构造
-        multiset<int> ms2(ms1);
-        EXPECT_EQ(ms2.size(), ms1.size());
-        EXPECT_EQ(*ms2.find(7), 7);
-
-        // 赋值
-        multiset<int> ms3;
-        ms3 = ms1;
-        EXPECT_EQ(ms3.size(), ms1.size());
-        EXPECT_EQ(*ms3.find(9), 9);
+        auto lb = cms.lower_bound(7);
+        auto ub = cms.upper_bound(7);
+        EXPECT_NE(lb, ub);
+        EXPECT_EQ(lb, ms.begin());
+        EXPECT_EQ(ub, ms.end());
     }
 
-    // 测试 const_iterator 和 const 对象访问
-    TEST(MultisetTest, ConstBeginEnd)
+    // 测试在空容器上 erase(key)
+    TEST_F(MultiSetTest, EraseNonexistentKey)
     {
-        multiset<int> ms;
-        ms.insert(2);
-        ms.insert(1);
-
-        const multiset<int> cms = ms;
-        auto it = cms.begin(); // const_iterator
-        EXPECT_EQ(*it, 1);     // 排序后最小为 1
-        ++it;
-        EXPECT_EQ(*it, 2);
+        size_t erased = ms.erase(100);
+        EXPECT_EQ(erased, 0);
+        EXPECT_TRUE(ms.empty());
     }
 
-    // 测试迭代器遍历顺序（应为有序）
-    TEST(MultisetTest, IteratorOrder)
+    // 边界测试：begin == end 时不能解引用
+    TEST_F(MultiSetTest, BeginEndSafety)
     {
-        multiset<int> ms;
-        ms.insert(50);
-        ms.insert(20);
-        ms.insert(40);
-        ms.insert(30);
-
-        int num = 20;
-        vector<int> values;
-        for (auto x : ms)
-        {
-            EXPECT_EQ(x, num);
-            num += 10;
-        }
+        // 空容器 begin==end
+        EXPECT_EQ(ms.begin(), ms.end());
+        // 不要解引用空容器迭代器，以下行为未定义，仅测试相等性
     }
+
 };

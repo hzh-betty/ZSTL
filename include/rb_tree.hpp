@@ -343,7 +343,7 @@ namespace zstl
             size_++;
 
             // 3. 红黑树重平衡
-            adjust_insert(parent, newnode);
+            adjust_insert(newnode, parent);
             header_->parent_->col_ = Color::BLACK; // 保证根为黑
 
             return {iterator(newnode), true};
@@ -392,7 +392,7 @@ namespace zstl
             size_++;
 
             // 3. 红黑树重平衡
-            adjust_insert(parent, newnode);
+            adjust_insert(newnode, parent);
             header_->parent_->col_ = Color::BLACK; // 保证根为黑
 
             return {iterator(newnode), true};
@@ -424,8 +424,10 @@ namespace zstl
             return iterator(header_);
         }
 
+        // 删除接口
         iterator erase(const_iterator pos)
         {
+            Compare com;
             iterator next = pos.node_;
             ++next;
             // 1. 计算中序后继，作为返回值
@@ -443,8 +445,7 @@ namespace zstl
             else
             {
                 // 情况 B/双子：交换数据后，将后继节点（必为半叶）设为删除对象
-                T data = successor->data_;
-                swap_delete_node(target->data_, data); // 只交换键值
+                copy_delete_node(target->data_, successor->data_);
                 del = successor;
                 delP = successor->parent_;
                 next = iterator(pos.node_);
@@ -462,7 +463,6 @@ namespace zstl
             // 5. 返回先前保存的后继
             return next;
         }
-
         iterator erase(const_iterator first, const_iterator last)
         {
             // 如果删除整个树，直接 clear
@@ -472,19 +472,20 @@ namespace zstl
                 return end();
             }
 
-            // 否则逐节点删除
+            // 否则逐节点删除，因为删除存在替换删除逻辑
+            // 如果last被替换，可能
+            const_iterator ret = last.node_;
             while (first != last)
             {
                 const_iterator cur = first++;
-                const_iterator ret = erase(cur);
+                ret = erase(cur);
                 if (ret != first && first != last)
                 {
                     first = ret;
                 }
             }
-            return iterator(last.node_); // 返回下一个有效迭代器
+            return iterator(ret.node_); // 返回下一个有效迭代器
         }
-
         size_t erase(const K &key)
         {
             const_iterator iter = find(key);
@@ -524,19 +525,18 @@ namespace zstl
 
     private:
         template <typename L, typename R>
-        void swap_delete_node(std::pair<const L, R> &a, std::pair<const L, R> &b)
+        void copy_delete_node(std::pair<const L, R> &a, std::pair<const L, R> &b)
         {
-            // 交换 const key —— const_cast 是常见 hack
-            std::swap(const_cast<L &>(a.first), const_cast<L &>(b.first));
-            // 交换 mapped value
-            std::swap(a.second, b.second);
+            // 赋值 const key —— const_cast 是常见 hack
+            const_cast<L &>(a.first) = b.first;
+            // 赋值 mapped value
+            a.second = b.second;
         }
 
         template <typename L>
-        void swap_delete_node(L &a, L &b)
+        void copy_delete_node(L &a, L &b)
         {
-            // 交换 const key —— const_cast 是常见 hack
-            std::swap(const_cast<L &>(a), const_cast<L &>(b));
+            const_cast<L &>(a) = b;
         }
 
         // 右旋
@@ -618,163 +618,85 @@ namespace zstl
         }
 
         // 插入调整
-        void adjust_insert(Node *del_pos, Node *del_parent_pos)
+        void adjust_insert(Node *cur, Node *parent)
         {
-            // 调整红黑树
-            if (del_pos->col_ == Color::BLACK) // 删除的是黑色结点
+            while (parent != header_ && parent->col_ == Color::RED)
             {
-                if (del_pos->left_) // 待删除结点有一个红色的左孩子（不可能是黑色）
+                Node *grandfather = parent->parent_;
+                if (parent == grandfather->left_)
                 {
-                    del_pos->left_->col_ = Color::BLACK; // 将这个红色的左孩子变黑即可
-                }
-                else if (del_pos->right_) // 待删除结点有一个红色的右孩子（不可能是黑色）
-                {
-                    del_pos->right_->col_ = Color::BLACK; // 将这个红色的右孩子变黑即可
-                }
-                else // 待删除结点的左右均为空
-                {
-                    while (del_pos != header_->parent_) // 可能一直调整到根结点
+                    Node *uncle = grandfather->right_;
+                    // 情况三：如果叔叔存在且为红
+                    if (uncle && uncle->col_ == Color::RED)
                     {
-                        if (del_pos == del_parent_pos->left_) // 待删除结点是其父结点的左孩子
+                        parent->col_ = uncle->col_ = Color::BLACK;
+                        grandfather->col_ = Color::RED;
+                        cur = grandfather;
+                        parent = cur->parent_;
+                    }
+                    else
+                    {
+                        // 情况四：叔叔不存在/存在且为黑，且cur在parent的左侧
+                        if (cur == parent->left_)
                         {
-                            Node *brother = del_parent_pos->right_; // 兄弟结点是其父结点的右孩子
-                            // 情况一：brother为红色
-                            if (brother->col_ == Color::RED)
-                            {
-                                del_parent_pos->col_ = Color::RED;
-                                brother->col_ = Color::BLACK;
-                                RotateL(del_parent_pos);
-                                // 需要继续处理
-                                brother = del_parent_pos->right_; // 更新brother（否则在本循环中执行其他情况的代码会出错）
-                            }
-                            // 情况二：brother为黑色，且其左右孩子都是黑色结点或为空
-                            if (((brother->left_ == nullptr) || (brother->left_->col_ == Color::BLACK)) && ((brother->right_ == nullptr) || (brother->right_->col_ == Color::BLACK)))
-                            {
-                                brother->col_ = Color::RED;
-                                if (del_parent_pos->col_ == Color::RED)
-                                {
-                                    del_parent_pos->col_ = Color::BLACK;
-                                    break;
-                                }
-                                // 需要继续处理
-                                del_pos = del_parent_pos;
-                                del_parent_pos = del_pos->parent_;
-                            }
-                            else
-                            {
-                                // 情况三：brother为黑色，且其左孩子是红色结点，右孩子是黑色结点或为空
-                                if ((brother->right_ == nullptr) || (brother->right_->col_ == Color::BLACK))
-                                {
-                                    brother->left_->col_ = Color::BLACK;
-                                    brother->col_ = Color::RED;
-                                    RotateR(brother);
-                                    // 需要继续处理
-                                    brother = del_parent_pos->right_; // 更新brother（否则执行下面情况四的代码会出错）
-                                }
-                                // 情况四：brother为黑色，且其右孩子是红色结点
-                                brother->col_ = del_parent_pos->col_;
-                                del_parent_pos->col_ = Color::BLACK;
-                                brother->right_->col_ = Color::BLACK;
-                                RotateL(del_parent_pos);
-                                break; // 情况四执行完毕后调整一定结束
-                            }
+                            //     g
+                            //   p   u
+                            // c
+                            RotateR(grandfather);
+                            parent->col_ = Color::BLACK;
+                            grandfather->col_ = Color::RED;
                         }
-                        else // del_pos == del_parent_pos->right_ //待删除结点是其父结点的左孩子
+                        else // 情况五：叔叔不存在 / 存在且为黑，cur在parent的右侧
                         {
-                            Node *brother = del_parent_pos->left_; // 兄弟结点是其父结点的左孩子
-                            // 情况一：brother为红色
-                            if (brother->col_ == Color::RED) // brother为红色
-                            {
-                                del_parent_pos->col_ = Color::RED;
-                                brother->col_ = Color::BLACK;
-                                RotateR(del_parent_pos);
-                                // 需要继续处理
-                                brother = del_parent_pos->left_; // 更新brother（否则在本循环中执行其他情况的代码会出错）
-                            }
-                            // 情况二：brother为黑色，且其左右孩子都是黑色结点或为空
-                            if (((brother->left_ == nullptr) || (brother->left_->col_ == Color::BLACK)) && ((brother->right_ == nullptr) || (brother->right_->col_ == Color::BLACK)))
-                            {
-                                brother->col_ = Color::RED;
-                                if (del_parent_pos->col_ == Color::RED)
-                                {
-                                    del_parent_pos->col_ = Color::BLACK;
-                                    break;
-                                }
-                                // 需要继续处理
-                                del_pos = del_parent_pos;
-                                del_parent_pos = del_pos->parent_;
-                            }
-                            else
-                            {
-                                // 情况三：brother为黑色，且其右孩子是红色结点，左孩子是黑色结点或为空
-                                if ((brother->left_ == nullptr) || (brother->left_->col_ == Color::BLACK))
-                                {
-                                    brother->right_->col_ = Color::BLACK;
-                                    brother->col_ = Color::RED;
-                                    RotateL(brother);
-                                    // 需要继续处理
-                                    brother = del_parent_pos->left_; // 更新brother（否则执行下面情况四的代码会出错）
-                                }
-                                // 情况四：brother为黑色，且其左孩子是红色结点
-                                brother->col_ = del_parent_pos->col_;
-                                del_parent_pos->col_ = Color::BLACK;
-                                brother->left_->col_ = Color::BLACK;
-                                RotateR(del_parent_pos);
-                                break; // 情况四执行完毕后调整一定结束
-                            }
+                            //     g
+                            //   p   u
+                            //     c
+                            RotateLR(grandfather);
+                            cur->col_ = Color::BLACK;
+                            grandfather->col_ = Color::RED;
                         }
+                        // 这时该子树的根节点变为黑色，不需要继续调整
+                        break;
+                    }
+                }
+                else
+                {
+                    Node *uncle = grandfather->left_;
+                    // 情况三：如果叔叔存在且为红
+                    if (uncle && uncle->col_ == Color::RED)
+                    {
+                        parent->col_ = uncle->col_ = Color::BLACK;
+                        grandfather->col_ = Color::RED;
+                        // 继续调整
+                        cur = grandfather;
+                        parent = cur->parent_;
+                    }
+                    else
+                    {
+                        // 情况四：叔叔不存在/存在且为黑，且cur在parent的左侧
+                        if (cur == parent->right_)
+                        {
+                            //    g
+                            //  u   p
+                            //        c
+                            RotateL(grandfather);
+                            parent->col_ = Color::BLACK;
+                            grandfather->col_ = Color::RED;
+                        }
+                        else // 情况五：叔叔不存在 / 存在且为黑，cur在parent的右侧
+                        {
+                            //    g
+                            //  u   p
+                            //    c
+                            RotateRL(grandfather);
+                            cur->col_ = Color::BLACK;
+                            grandfather->col_ = Color::RED;
+                        }
+                        // 这时该子树的根节点变为黑色，不需要继续调整
+                        break;
                     }
                 }
             }
-        }
-
-        // 删除节点
-        void delete_node(Node *del, Node *delP)
-        {
-            // 根节点被删：直接将唯一子节点提到根
-            if (del == header_->parent_)
-            {
-                Node *child = del->left_ ? del->left_ : del->right_;
-                header_->parent_ = child;
-                if (child)
-                {
-                    child->parent_ = header_;
-                    child->col_ = Color::BLACK;
-                }
-            }
-            else if (del->left_ == nullptr) // 实际删除结点的左子树为空
-            {
-                if (del == delP->left_) // 实际删除结点是其父结点的左孩子
-                {
-                    delP->left_ = del->right_;
-                    // 指向父节点
-                    if (del->right_)
-                        del->right_->parent_ = delP;
-                }
-                else // 实际删除结点是其父结点的右孩子
-                {
-                    delP->right_ = del->right_;
-                    if (del->right_)
-                        del->right_->parent_ = delP;
-                }
-            }
-            else // 实际删除结点的右子树为空
-            {
-                if (del == delP->left_) // 实际删除结点是其父结点的左孩子
-                {
-                    delP->left_ = del->left_;
-                    if (del->left_)
-                        del->left_->parent_ = delP;
-                }
-                else // 实际删除结点是其父结点的右孩子
-                {
-                    delP->right_ = del->left_;
-                    if (del->left_)
-                        del->left_->parent_ = delP;
-                }
-            }
-            delete del; // 实际删除结点
-            --size_;
         }
 
         // 删除调整
@@ -797,6 +719,7 @@ namespace zstl
                         if (delCur == delParent->left_) // 待删除结点是其父结点的左孩子
                         {
                             Node *brother = delParent->right_; // 兄弟结点是其父结点的右孩子
+                                                               // 新增：若兄弟为空，视作黑色哨兵，向上继续调整
                             // 情况一：brother为红色
                             if (brother->col_ == Color::RED)
                             {
@@ -807,7 +730,8 @@ namespace zstl
                                 brother = delParent->right_; // 更新brother
                             }
                             // 情况二：brother为黑色，且其左右孩子都是黑色结点或为空
-                            if (((brother->left_ == nullptr) || (brother->left_->col_ == Color::BLACK)) && ((brother->right_ == nullptr) || (brother->right_->col_ == Color::BLACK)))
+                            if (((brother->left_ == nullptr) || (brother->left_->col_ == Color::BLACK)) &&
+                                ((brother->right_ == nullptr) || (brother->right_->col_ == Color::BLACK)))
                             {
                                 brother->col_ = Color::RED;
                                 if (delParent->col_ == Color::RED)
@@ -887,6 +811,56 @@ namespace zstl
             }
         }
 
+         // 删除节点
+         void delete_node(Node *del, Node *delP)
+         {
+             // 根节点被删：直接将唯一子节点提到根
+             if (delP == header_)
+             {
+                 // 调整红黑树
+                 Node *child = del->left_ ? del->left_ : del->right_;
+                 header_->parent_ = child;
+                 if (child != nullptr)
+                 {
+                     child->parent_ = header_;
+                     child->col_ = Color::BLACK;
+                 }
+             }
+             else if (del->left_ == nullptr) // 实际删除结点的左子树为空
+             {
+                 if (del == delP->left_) // 实际删除结点是其父结点的左孩子
+                 {
+                     delP->left_ = del->right_;
+                     // 指向父节点
+                     if (del->right_)
+                         del->right_->parent_ = delP;
+                 }
+                 else // 实际删除结点是其父结点的右孩子
+                 {
+                     delP->right_ = del->right_;
+                     if (del->right_)
+                         del->right_->parent_ = delP;
+                 }
+             }
+             else // 实际删除结点的右子树为空
+             {
+                 if (del == delP->left_) // 实际删除结点是其父结点的左孩子
+                 {
+                     delP->left_ = del->left_;
+                     if (del->left_)
+                         del->left_->parent_ = delP;
+                 }
+                 else // 实际删除结点是其父结点的右孩子
+                 {
+                     delP->right_ = del->left_;
+                     if (del->left_)
+                         del->left_->parent_ = delP;
+                 }
+             }
+             delete del; // 实际删除结点
+             --size_;
+         }
+ 
         // 销毁除header之外的节点
         void destroy(Node *&root)
         {
