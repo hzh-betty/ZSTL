@@ -74,6 +74,15 @@ namespace zstl
         {
             return hash_table_.end();
         }
+        std::pair<iterator, iterator> equal_range(const K &k)
+        {
+            return hash_table_.equal_range(k);
+        }
+
+        std::pair<const_iterator, const_iterator> equal_range(const K &k) const
+        {
+            return hash_table_.equal_range(k);
+        }
 
         std::pair<iterator, bool> insert(const std::pair<K, V> &data)
         {
@@ -102,6 +111,14 @@ namespace zstl
             return iter != end() ? 1 : 0;
         }
 
+        iterator erase(const_iterator pos)
+        {
+            return hash_table_.erase(pos);
+        }
+        iterator erase(const_iterator begin, const_iterator end)
+        {
+            return hash_table_.erase(begin, end);
+        }
         size_t erase(const K &key)
         {
             return hash_table_.erase(key) ;
@@ -130,4 +147,111 @@ namespace zstl
     private:
         HashTable<K, std::pair<const K, V>, Hash, Compare> hash_table_;
     };
+
+    template <typename K, typename Hash = SetHashFunc<K>, typename Compare = USetCompare<K>>
+    class unordered_multimap
+    {
+    public:
+        using iterator = typename HashTable<K, K, Hash, Compare>::const_iterator;
+        using const_iterator = typename HashTable<K, K, Hash, Compare>::const_iterator;
+        iterator begin()
+        {
+            return hash_table_.begin();
+        }
+
+        iterator end()
+        {
+            return hash_table_.end();
+        }
+
+        const_iterator begin() const
+        {
+            return hash_table_.begin();
+        }
+
+        const_iterator end() const
+        {
+            return hash_table_.end();
+        }
+
+        std::pair<iterator, iterator> equal_range(const K &k)
+        {
+            return hash_table_.equal_range(k);
+        }
+
+        std::pair<const_iterator, const_iterator> equal_range(const K &k) const
+        {
+            return hash_table_.equal_range(k);
+        }
+
+        iterator insert(const K &key)
+        {
+            return hash_table_.insert_duplicate(key);
+        }
+
+        iterator find(const K &key)
+        {
+            return hash_table_.find(key);
+        }
+
+        const_iterator find(const K &key) const
+        {
+            return hash_table_.find(key);
+        }
+
+        size_t count(const K &key) const
+        {
+            auto p = hash_table_.equal_range(key);
+            const_iterator it_first = p.first;
+            const_iterator it_end = p.second;
+            size_t cnt = 0;
+            while (it_first != it_end)
+            {
+                cnt++;
+                ++it_first;
+            }
+            return cnt;
+        }
+
+        // 删除相关接口
+        iterator erase(const_iterator pos)
+        {
+            return hash_table_.erase(pos);
+        }
+        iterator erase(const_iterator begin, const_iterator end)
+        {
+            return hash_table_.erase(begin, end);
+        }
+        size_t erase(const K &key)
+        {
+            auto p = equal_range(key);
+            const size_t old_size = size();
+            erase(p.first, p.second);
+            return old_size - size();
+        }
+
+        void clear()
+        {
+            hash_table_.clear();
+        }
+
+        void swap(unordered_multimap &s)
+        {
+            hash_table_.swap(s.hash_table_);
+        }
+
+        size_t size() const
+        {
+            return hash_table_.size();
+        }
+
+        bool empty() const
+        {
+            return hash_table_.empty();
+        }
+
+    private:
+        HashTable<K, K, Hash, Compare> hash_table_;
+    };
+
 };

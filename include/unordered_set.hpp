@@ -95,6 +95,14 @@ namespace zstl
             return find(key) != end() ? 1 : 0;
         }
 
+        iterator erase(const_iterator pos)
+        {
+            return hash_table_.erase(pos);
+        }
+        iterator erase(const_iterator begin, const_iterator end)
+        {
+            return hash_table_.erase(begin, end);
+        }
         size_t erase(const K &key)
         {
             return hash_table_.erase(key);
