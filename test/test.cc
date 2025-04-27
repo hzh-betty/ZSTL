@@ -11,6 +11,7 @@
 #include "test_multimap.hpp"
 #include "test_unordered_set.hpp"
 #include "test_unordered_map.hpp"
+#include "test_unordered_multiset.hpp"
 
 // 主函数：运行所有测试
 int main(int argc, char **argv)

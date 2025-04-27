@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <cassert>
+#include<initializer_list>
 namespace zstl
 {
     template <typename T>
@@ -47,6 +48,18 @@ namespace zstl
 
             // 逐个调用 push_back 将 v 中的元素复制进来
             for (auto &e : v)
+            {
+                push_back(e);
+            }
+        }
+
+        vector(std::initializer_list<T> &lt)
+        {
+            // 分配足够的内存存储 v 的所有元素
+            reserve(lt.size());
+
+            // 逐个调用 push_back 将 v 中的元素复制进来
+            for (auto &e : lt)
             {
                 push_back(e);
             }

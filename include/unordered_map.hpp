@@ -77,7 +77,7 @@ namespace zstl
 
         std::pair<iterator, bool> insert(const std::pair<K, V> &data)
         {
-            return hash_table_.insert(data);
+            return hash_table_.insert_unique(data);
         }
 
         V &operator[](const K &key)
@@ -104,7 +104,7 @@ namespace zstl
 
         size_t erase(const K &key)
         {
-            return hash_table_.erase(key) ? 1 : 0;
+            return hash_table_.erase(key) ;
         }
 
         void clear()
