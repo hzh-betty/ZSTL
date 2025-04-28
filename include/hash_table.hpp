@@ -15,6 +15,8 @@ namespace zstl
 
         HashNode(const T &data)
             : data_(data), next_(nullptr) {}
+        HashNode(T &&data)
+            : data_(std::move(data)), next_(nullptr) {}
     };
 
     // 前向声明哈希表模板
@@ -135,7 +137,6 @@ namespace zstl
         // 默认构造与析构
         HashTable() = default;
         ~HashTable() { clear(); }
-
         // 拷贝构造：按桶复制节点
         HashTable(const HashTable &ht)
         {
@@ -160,6 +161,24 @@ namespace zstl
             return *this;
         }
 
+        // 移动构造函数
+        HashTable(HashTable &&ht) noexcept
+            : tables_(std::move(ht.tables_)), size_(ht.size_)
+        {
+            ht.size_ = 0;
+        }
+        // 移动赋值运算符
+        HashTable &operator=(HashTable &&ht) noexcept
+        {
+            if (this != &ht)
+            {
+                clear();
+                tables_ = std::move(ht.tables_);
+                size_ = ht.size_;
+                ht.size_ = 0;
+            }
+            return *this;
+        }
         // 查找元素
         iterator find(const K &key) const
         {
@@ -204,6 +223,74 @@ namespace zstl
         }
         iterator insert_duplicate(const T &data)
         {
+            Hash hash;
+            Compare com;
+            // 负载因子 >= 1 时扩容
+            if (size_ == tables_.size())
+            {
+                rehash();
+            }
+            // 插入到头部
+            size_t index = hash(com(data)) % tables_.size();
+            Node *new_node = new Node(data);
+            Node *cur = tables_[index];
+            Node *prev = nullptr; // 尾插
+            while (cur)
+            {
+                if (com(cur->data_, data))
+                {
+                    break;
+                }
+                prev = cur;
+                cur = cur->next_;
+            }
+
+            if (prev == nullptr)
+            {
+                new_node->next_ = tables_[index];
+                tables_[index] = new_node;
+            }
+            else
+            {
+                prev->next_ = new_node;
+                new_node->next_ = cur;
+            }
+
+            ++size_;
+            return iterator(new_node, this);
+        }
+
+        // emplace 接口（唯一插入）
+        template <typename... Args>
+        std::pair<iterator, bool> emplace_unique(Args &&...args)
+        {
+            T data(std::forward<Args>(args)...);
+            Hash hash;
+            Compare com;
+            // 已存在则不插入
+            auto it_pair = find(com(data));
+            if (it_pair != end())
+                return {it_pair, false};
+
+            // 负载因子 >= 1 时扩容
+            if (size_ == tables_.size())
+            {
+                rehash();
+            }
+            // 插入到头部
+            size_t index = hash(com(data)) % tables_.size();
+            Node *new_node = new Node(data);
+            new_node->next_ = tables_[index];
+            tables_[index] = new_node;
+            ++size_;
+            return {iterator(new_node, this), true};
+        }
+
+        // emplace 接口（重复插入）
+        template <typename... Args>
+        iterator emplace_duplicate(Args &&...args)
+        {
+            T data(std::forward<Args>(args)...);
             Hash hash;
             Compare com;
             // 负载因子 >= 1 时扩容

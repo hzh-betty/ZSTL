@@ -159,6 +159,15 @@ namespace zstl
                 push_back(it);
             }
         }
+        // initializer_list 构造函数
+        list(std::initializer_list<T> il)
+        {
+            empty_init();
+            for (const auto &val : il)
+            {
+                push_back(val);
+            }
+        }
 
         // 赋值运算符，采用拷贝-交换策略
         list<T> &operator=(list<T> it)

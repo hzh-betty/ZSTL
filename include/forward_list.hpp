@@ -7,12 +7,17 @@ namespace zstl
     template <typename T>
     struct ForwardListNode
     {
-        T data_;                    // 节点存储的数据
-        ForwardListNode *next_;     // 指向下一个节点的指针
+        T data_;                // 节点存储的数据
+        ForwardListNode *next_; // 指向下一个节点的指针
 
         // 构造函数：初始化数据与下一节点指针
         ForwardListNode(const T &data = T(), ForwardListNode *node = nullptr)
             : data_(data), next_(node)
+        {
+        }
+        // 构造函数：初始化数据与下一节点指针
+        ForwardListNode(T &&data, ForwardListNode *node = nullptr)
+            : data_(std::move(data)), next_(node)
         {
         }
     };
@@ -24,7 +29,7 @@ namespace zstl
         using Node = ForwardListNode<T>;
         using Self = ForwardListIterator<T, Ref, Ptr>;
 
-        Node *node_;  // 当前指向的节点
+        Node *node_; // 当前指向的节点
 
         // 构造：可指定起始节点，默认为空
         ForwardListIterator(Node *node = nullptr)
@@ -118,6 +123,47 @@ namespace zstl
             return *this;
         }
 
+        // 移动构造函数
+        forward_list(forward_list &&other) noexcept
+            : header_(other.header_)
+        {
+            other.header_ = new Node();
+        }
+
+        // 移动赋值运算符
+        forward_list &operator=(forward_list &&other) noexcept
+        {
+            if (this != &other)
+            {
+                clear();
+                delete header_;
+                header_ = other.header_;
+                other.header_ = new Node();
+            }
+            return *this;
+        }
+
+        // initializer_list 构造函数
+        forward_list(std::initializer_list<T> il)
+            : header_(new Node())
+        {
+            Node *tail = header_;
+            for (const auto &val : il)
+            {
+                Node *new_node = new Node(val);
+                tail->next_ = new_node;
+                tail = new_node;
+            }
+        }
+
+        // emplace_after 接口
+        template <typename... Args>
+        iterator emplace_after(iterator pos, Args &&...args)
+        {
+            Node *new_node = new Node(T(std::forward<Args>(args)...), pos.node_->next_);
+            pos.node_->next_ = new_node;
+            return iterator(new_node);
+        }
         // 访问首元素
         T &front() { return header_->next_->data_; }
         const T &front() const { return header_->next_->data_; }
@@ -178,6 +224,6 @@ namespace zstl
         bool empty() const { return header_->next_ == nullptr; }
 
     private:
-        Node *header_;  // 哨兵头节点，不存储有效数据
+        Node *header_; // 哨兵头节点，不存储有效数据
     };
 } // namespace zstl

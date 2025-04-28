@@ -45,6 +45,44 @@ namespace zstl
     public:
         using iterator = typename HashTable<K, K, Hash, Compare>::const_iterator;
         using const_iterator = typename HashTable<K, K, Hash, Compare>::const_iterator;
+
+        unordered_set() = default;
+        unordered_set(const unordered_set &) = default;
+        unordered_set &operator=(const unordered_set &) = default;
+        ~unordered_set() = default;
+
+        // 移动构造函数
+        unordered_set(unordered_set &&s) noexcept
+            : hash_table_(std::move(s.hash_table_))
+        {
+        }
+
+        // 移动赋值运算符
+        unordered_set &operator=(unordered_set &&s) noexcept
+        {
+            if (this != &s)
+            {
+                hash_table_ = std::move(s.hash_table_);
+            }
+            return *this;
+        }
+
+        // emplace 接口
+        template <typename... Args>
+        std::pair<iterator, bool> emplace(Args &&...args)
+        {
+            return hash_table_.emplace_unique(std::forward<Args>(args)...);
+        }
+
+        // initializer_list 构造函数
+        unordered_set(std::initializer_list<K> il)
+        {
+            for (auto &e : il)
+            {
+                emplace(std::move(e));
+            }
+        }
+
         iterator begin()
         {
             return hash_table_.begin();
@@ -138,6 +176,43 @@ namespace zstl
     public:
         using iterator = typename HashTable<K, K, Hash, Compare>::const_iterator;
         using const_iterator = typename HashTable<K, K, Hash, Compare>::const_iterator;
+
+        unordered_multiset() = default;
+        unordered_multiset(const unordered_multiset &) = default;
+        unordered_multiset &operator=(const unordered_multiset &) = default;
+        ~unordered_multiset() = default;
+        // 移动构造函数
+        unordered_multiset(unordered_multiset &&s) noexcept
+            : hash_table_(std::move(s.hash_table_))
+        {
+        }
+
+        // 移动赋值运算符
+        unordered_multiset &operator=(unordered_multiset &&s) noexcept
+        {
+            if (this != &s)
+            {
+                hash_table_ = std::move(s.hash_table_);
+            }
+            return *this;
+        }
+
+        // emplace 接口
+        template <typename... Args>
+        std::pair<iterator, bool> emplace(Args &&...args)
+        {
+            return hash_table_.emplace_duplicate(std::forward<Args>(args)...);
+        }
+
+        // initializer_list 构造函数
+        unordered_multiset(std::initializer_list<K> il)
+        {
+            for (auto &e : il)
+            {
+                emplace(std::move(e));
+            }
+        }
+
         iterator begin()
         {
             return hash_table_.begin();

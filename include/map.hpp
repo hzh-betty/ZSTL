@@ -79,6 +79,42 @@ namespace zstl
             return {lower_bound(k), upper_bound(k)};
         }
 
+        map() = default;
+        map(const map &) = default;
+        map &operator=(const map &) = default;
+        ~map() = default;
+        // 移动构造函数
+        map(map &&other) noexcept
+            : rb_tree_(std::move(other.rb_tree_))
+        {
+        }
+
+        // 移动赋值运算符
+        map &operator=(map &&other) noexcept
+        {
+            if (this != &other)
+            {
+                rb_tree_ = std::move(other.rb_tree_);
+            }
+            return *this;
+        }
+
+        // initializer_list 构造函数
+        map(std::initializer_list<std::pair<const K, V>> il)
+        {
+            for (auto &e : il)
+            {
+                emplace(std::move(e));
+            }
+        }
+
+        // emplace 接口
+        template <typename... Args>
+        std::pair<iterator, bool> emplace(Args &&...args)
+        {
+            return rb_tree_.emplace_unique(std::forward<Args>(args)...);
+        }
+
         iterator erase(const_iterator begin, const_iterator end)
         {
             return rb_tree_.erase(begin, end);
@@ -131,7 +167,7 @@ namespace zstl
     };
 
     template <typename K, typename V, typename Compare = MapCompare<K, V>>
-    class mutimap
+    class multimap
     {
     public:
         using iterator = typename RBTree<K, std::pair<const K, V>, Compare>::iterator;
@@ -203,7 +239,43 @@ namespace zstl
 
         iterator insert(const std::pair<K, V> &val)
         {
-            return rb_tree_.insert_duplicate(val).first;
+            return rb_tree_.insert_duplicate(val);
+        }
+
+        multimap() = default;
+        multimap(const multimap &) = default;
+        multimap &operator=(const multimap &) = default;
+        ~multimap() = default;
+        // 移动构造函数
+        multimap(multimap &&other) noexcept
+            : rb_tree_(std::move(other.rb_tree_))
+        {
+        }
+
+        // 移动赋值运算符
+        multimap &operator=(multimap &&other) noexcept
+        {
+            if (this != &other)
+            {
+                rb_tree_ = std::move(other.rb_tree_);
+            }
+            return *this;
+        }
+
+        // initializer_list 构造函数
+        multimap(std::initializer_list<std::pair<const K, V>> il)
+        {
+            for (auto &e : il)
+            {
+                emplace(std::move(e));
+            }
+        }
+
+        // emplace 接口
+        template <typename... Args>
+        std::pair<iterator, bool> emplace(Args &&...args)
+        {
+            return rb_tree_.emplace_duplicate(std::forward<Args>(args)...);
         }
 
         iterator find(const K &key)

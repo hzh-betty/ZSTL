@@ -1,13 +1,38 @@
 #pragma once
 #include <iostream>
 #include "deque.hpp"
-#include"vector.hpp"
+#include "vector.hpp"
 namespace zstl
 {
     template <typename T, typename Container = deque<T>>
     class queue
     {
     public:
+        queue() = default;
+        ~queue() = default;
+
+        // 移动构造函数
+        queue(queue &&other)
+            : con_(std::move(other.con_))
+        {
+        }
+
+        // 移动赋值运算符
+        queue &operator=(queue &&other)
+        {
+            if (this != &other)
+            {
+                con_ = std::move(other.con_);
+            }
+            return *this;
+        }
+
+        // 在 queue 类中添加以下代码
+        template <typename... Args>
+        void emplace(Args &&...args)
+        {
+            con_.emplace_back(std::forward<Args>(args)...);
+        }
         // 插入元素
         void push(const T &x)
         {
@@ -49,7 +74,7 @@ namespace zstl
         }
 
         // 获取大小
-        size_t size()const
+        size_t size() const
         {
             return con_.size();
         }
@@ -58,13 +83,12 @@ namespace zstl
         Container con_;
     };
 
-
     template <typename T>
     struct less
     {
         bool operator()(const T &t1, const T &t2)
         {
-           return t1 < t2;
+            return t1 < t2;
         }
     };
 
@@ -76,7 +100,7 @@ namespace zstl
             return t1 > t2;
         }
     };
-    
+
     /*优先级队列*/
     template <typename T, typename Container = vector<T>, typename Compare = less<T>>
     class priority_queue
@@ -100,6 +124,28 @@ namespace zstl
             }
         }
 
+        // 移动构造函数
+        priority_queue(priority_queue &&other) noexcept
+            : con_(std::move(other.con_))
+        {
+        }
+
+        // 移动赋值运算符
+        priority_queue &operator=(priority_queue &&other) noexcept
+        {
+            if (this != &other)
+            {
+                con_ = std::move(other.con_);
+            }
+            return *this;
+        }
+
+        template <typename... Args>
+        void emplace(Args &&...args)
+        {
+            con_.emplace_back(std::forward<Args>(args)...);
+            adjust_up(con_.size() - 1);
+        }
         // 插入元素
         void push(const T &x)
         {

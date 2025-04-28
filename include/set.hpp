@@ -65,10 +65,47 @@ namespace zstl
         {
             return {lower_bound(k), upper_bound(k)};
         }
-        
+
         std::pair<const_iterator, const_iterator> equal_range(const K &k) const
         {
             return {lower_bound(k), upper_bound(k)};
+        }
+
+        set() = default;
+        set(const set &) = default;
+        set &operator=(const set &) = default;
+        ~set() = default;
+
+        // 移动构造函数
+        set(set &&other) noexcept
+            : rb_tree_(std::move(other.rb_tree_))
+        {
+        }
+
+        // 移动赋值运算符
+        set &operator=(set &&other) noexcept
+        {
+            if (this != &other)
+            {
+                rb_tree_ = std::move(other.rb_tree_);
+            }
+            return *this;
+        }
+
+        // emplace 接口
+        template <typename... Args>
+        std::pair<iterator, bool> emplace(Args &&...args)
+        {
+            return rb_tree_.emplace_unique(std::forward<Args>(args)...);
+        }
+
+        // initializer_list 构造函数
+        set(std::initializer_list<K> il)
+        {
+            for (auto &e : il)
+            {
+                emplace(std::move(e));
+            }
         }
 
         iterator erase(const_iterator begin, const_iterator end)
@@ -85,7 +122,7 @@ namespace zstl
         {
             return rb_tree_.erase(pos);
         }
-        
+
         size_t erase(const K &key)
         {
             return rb_tree_.erase(key);
@@ -141,7 +178,7 @@ namespace zstl
 
         iterator insert(const K &val)
         {
-            return rb_tree_.insert_duplicate(val).first;
+            return rb_tree_.insert_duplicate(val);
         }
 
         iterator lower_bound(const K &k)
@@ -169,6 +206,43 @@ namespace zstl
         std::pair<const_iterator, const_iterator> equal_range(const K &k) const
         {
             return {lower_bound(k), upper_bound(k)};
+        }
+
+        multiset() = default;
+        multiset(const multiset &) = default;
+        multiset &operator=(const multiset &) = default;
+        ~multiset() = default;
+
+        // 移动构造函数
+        multiset(multiset &&other) noexcept
+            : rb_tree_(std::move(other.rb_tree_))
+        {
+        }
+
+        // initializer_list 构造函数
+        multiset(std::initializer_list<K> il)
+        {
+            for (auto &e : il)
+            {
+                emplace(std::move(e));
+            }
+        }
+
+        // 移动赋值运算符
+        multiset &operator=(multiset &&other) noexcept
+        {
+            if (this != &other)
+            {
+                rb_tree_ = std::move(other.rb_tree_);
+            }
+            return *this;
+        }
+
+        // emplace 接口
+        template <typename... Args>
+        iterator emplace(Args &&...args)
+        {
+            return rb_tree_.emplace_duplicate(std::forward<Args>(args)...);
         }
 
         iterator erase(const_iterator pos)

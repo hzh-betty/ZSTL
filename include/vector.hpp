@@ -53,7 +53,7 @@ namespace zstl
             }
         }
 
-        vector(std::initializer_list<T> &lt)
+        vector(std::initializer_list<T> lt)
         {
             // 分配足够的内存存储 v 的所有元素
             reserve(lt.size());
@@ -105,6 +105,7 @@ namespace zstl
 
         // 移动构造
         vector(vector&& v)
+        :start_(v.start_),finish_(v.finish_),end_of_storage_(v.end_of_storage_)
         {
             v.start_ = v.finish_ = v.end_of_storage_ = nullptr;
         }
@@ -116,9 +117,9 @@ namespace zstl
             {
                 delete[] start_;
                 start_ = v.start_;
-                finish_ = v.finsih_;
+                finish_ = v.finish_;
                 end_of_storage_ = v.end_of_storage_;
-                v.start_ = v.finsih_ = v.end_of_storage_ = nullptr;
+                v.start_ = v.finish_ = v.end_of_storage_ = nullptr;
             }
         }
 

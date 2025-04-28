@@ -1,152 +1,148 @@
 #pragma once
 #include "../include/unordered_map.hpp"
+#include "../include/string.hpp"
 #include <gtest/gtest.h>
 namespace zstl
 {
-    // 测试夹具：初始化一个空的 unordered_multimap<int>
-    class UnorderedMultiMapTest : public ::testing::Test
+    // 测试 Fixture（可选）
+    class UnorderedMultimapTest : public ::testing::Test
     {
     protected:
-        unordered_multimap<int> umm;
+        // 每个 TEST 之前会执行
+        void SetUp() override
+        {
+            // 可在此初始化共享资源
+        }
+        // 每个 TEST 之后会执行
+        void TearDown() override
+        {
+            // 可在此清理
+        }
     };
 
-    // 测试插入操作
-    TEST_F(UnorderedMultiMapTest, InsertAndSize)
+    // 1. 默认构造应为空
+    TEST_F(UnorderedMultimapTest, DefaultConstructorIsEmpty)
     {
-        // 插入单个元素后，size 应该为 1
-        auto it1 = umm.insert(42);
-        EXPECT_EQ(*it1, 42) << "插入元素 42 后，迭代器应指向 42";
-        EXPECT_EQ(umm.size(), 1u) << "插入一个元素后，size 应为 1";
-
-        // 再次插入相同键，multimap 应允许重复，size 应增加
-        auto it2 = umm.insert(42);
-        EXPECT_EQ(*it2, 42) << "再次插入 42，应返回指向新元素的迭代器";
-        EXPECT_EQ(umm.size(), 2u) << "插入重复键后，size 应为 2";
-
-        // 插入不同键，size 继续增加
-        auto it3 = umm.insert(7);
-        EXPECT_EQ(*it3, 7) << "插入元素 7，应返回指向 7 的迭代器";
-        EXPECT_EQ(umm.size(), 3u) << "插入不同键后，size 应为 3";
+        unordered_multimap<int, int> m;
+        EXPECT_TRUE(m.empty()); // empty() 应为 true
+        EXPECT_EQ(m.size(), 0u);
     }
 
-    // 测试 find 和 count
-    TEST_F(UnorderedMultiMapTest, FindAndCount)
+    // 2. initializer_list 构造
+    TEST_F(UnorderedMultimapTest, InitializerListConstructor)
     {
-        umm.insert(1);
-        umm.insert(1);
-        umm.insert(2);
-
-        // find 应返回首个匹配元素的迭代器
-        auto it = umm.find(1);
-        ASSERT_NE(it, umm.end()) << "find 应找到键 1";
-        EXPECT_EQ(*it, 1) << "find 返回的元素应等于查询键";
-
-        // count 应返回键 1 的出现次数
-        EXPECT_EQ(umm.count(1), 2u) << "键 1 应出现 2 次";
-        EXPECT_EQ(umm.count(2), 1u) << "键 2 应出现 1 次";
-        EXPECT_EQ(umm.count(3), 0u) << "键 3 未插入，应返回 0";
+        unordered_multimap<int, char> m{{1, 'a'}, {2, 'b'}, {1, 'c'}};
+        // 应包含 3 个元素，允许键重复
+        EXPECT_EQ(m.size(), 3u);
+        EXPECT_EQ(m.count(1), 2u); // count() 应返回 2
+        EXPECT_EQ(m.count(2), 1u);
     }
 
-    // 测试 equal_range
-    TEST_F(UnorderedMultiMapTest, EqualRangeIteration)
+    // 3. emplace 原位构造并返回迭代器
+    TEST_F(UnorderedMultimapTest, EmplaceInsertsElement)
     {
-        umm.insert(5);
-        umm.insert(5);
-        umm.insert(5);
-        umm.insert(6);
+        unordered_multimap<string, double> m;
+        auto p = m.emplace("pi", 3.14); // emplace 返回 pair<iterator,bool>
+        EXPECT_EQ(p->first, "pi");
+        EXPECT_DOUBLE_EQ(p->second, 3.14);
+        EXPECT_EQ(m.count("pi"), 1u);
+    }
 
-        auto range = umm.equal_range(5);
+    // 4. insert_duplicate（insert）允许重复键
+    TEST_F(UnorderedMultimapTest, InsertAllowsDuplicates)
+    {
+        unordered_multimap<int, int> m;
+        m.insert({5, 5});
+        m.insert({5, 5});
+        EXPECT_EQ(m.count(5), 2u);
+    }
+
+    // 5. find 应能找到元素
+    TEST_F(UnorderedMultimapTest, FindReturnsValidIterator)
+    {
+        unordered_multimap<int, char> m{{1, 'x'}, {2, 'y'}};
+        auto it = m.find(2);
+        ASSERT_NE(it, m.end());
+        EXPECT_EQ(it->first, 2);
+        EXPECT_EQ(it->second, 'y');
+    }
+
+    // 6. equal_range 应遍历所有同键元素
+    TEST_F(UnorderedMultimapTest, EqualRangeIteratesAll)
+    {
+        unordered_multimap<int, char> m{{1, 'a'}, {1, 'b'}, {1, 'd'}, {2, 'z'}};
+        auto range = m.equal_range(1); // equal_range 
         size_t cnt = 0;
-        for (auto it = range.first; it != range.second; ++it)
+        for (auto iter = range.first; iter != range.second; ++iter)
         {
-            EXPECT_EQ(*it, 5) << "equal_range 范围内元素应等于 5";
             ++cnt;
+            EXPECT_EQ(iter->first, 1);
         }
-        EXPECT_EQ(cnt, 3u) << "equal_range 应返回 3 个元素";
+        EXPECT_EQ(cnt, 3u);
     }
 
-    // 测试 erase by key, iterator, and range
-    TEST_F(UnorderedMultiMapTest, EraseOperations)
+    // 7. erase(key) 删除所有该键元素，返回删除数量
+    TEST_F(UnorderedMultimapTest, EraseByKey)
     {
-        umm.insert(10);
-        umm.insert(10);
-        umm.insert(20);
-        umm.insert(20);
-        EXPECT_EQ(umm.size(), 4u);
-
-        // erase(key) 应删除所有该键元素，返回删除数量
-        size_t erased = umm.erase(10);
-        EXPECT_EQ(erased, 2u) << "erase(10) 应删除 2 个元素";
-        EXPECT_EQ(umm.count(10), 0u) << "删除后 count(10) 应为 0";
-        EXPECT_EQ(umm.size(), 2u) << "删除后总 size 应为 2";
-
-        // erase(iterator) 删除单个元素
-        auto it = umm.find(20);
-        ASSERT_NE(it, umm.end());
-        auto next_it = umm.erase(it);
-        // 下一个迭代器要么指向第二个 20，要么等于 end
-        if (next_it != umm.end())
-        {
-            EXPECT_EQ(*next_it, 20) << "erase 返回的迭代器应指向下一个 20";
-        }
-        EXPECT_EQ(umm.count(20), 1u) << "删除一个后，count(20) 应为 1";
-
-        // erase(range) 删除剩余所有 20
-        auto range = umm.equal_range(20);
-        umm.erase(range.first, range.second);
-        EXPECT_EQ(umm.count(20), 0u) << "range erase 后，count(20) 应为 0";
-        EXPECT_TRUE(umm.empty()) << "全部删除后，应为空";
+        unordered_multimap<int, int> m;
+        m.emplace(10, 100);
+        m.emplace(10, 200);
+        size_t removed = m.erase(10); // erase(key)
+        EXPECT_EQ(removed, 2u);
+        EXPECT_EQ(m.count(10), 0u);
     }
 
-    // 测试 clear 和 empty
-    TEST_F(UnorderedMultiMapTest, ClearAndEmpty)
+    // 8. erase(iterator) 与 erase(range)
+    TEST_F(UnorderedMultimapTest, EraseByIterator)
     {
-        umm.insert(100);
-        umm.insert(200);
-        EXPECT_FALSE(umm.empty()) << "插入后不应为空";
-        umm.clear();
-        EXPECT_TRUE(umm.empty()) << "clear 后应为空";
-        EXPECT_EQ(umm.size(), 0u) << "clear 后 size 应为 0";
+        unordered_multimap<int, char> m{{1, 'a'}, {2, 'b'}, {3, 'c'}};
+        auto it2 = m.find(2);
+        ASSERT_NE(it2, m.end());
+        m.erase(it2);
+        EXPECT_EQ(m.count(2), 0u);
+
+        // 区间删除
+        auto r = m.equal_range(1);
+        m.erase(r.first, r.second);
+        EXPECT_EQ(m.count(1), 0u);
     }
 
-    // 测试 swap
-    TEST_F(UnorderedMultiMapTest, SwapContents)
+    // 9. clear 后应为空
+    TEST_F(UnorderedMultimapTest, ClearEmptiesContainer)
     {
-        unordered_multimap<int> other;
-        umm.insert(1);
-        umm.insert(2);
-        other.insert(3);
-
-        umm.swap(other);
-
-        // 交换后 umm 应包含原 other 的元素
-        EXPECT_EQ(umm.size(), 1u);
-        EXPECT_EQ(umm.count(3), 1u);
-        EXPECT_EQ(other.size(), 2u);
-        EXPECT_EQ(other.count(1), 1u);
-        EXPECT_EQ(other.count(2), 1u);
+        unordered_multimap<int, int> m;
+        m.emplace(1, 1);
+        m.emplace(2, 2);
+        m.clear(); // clear 方法
+        EXPECT_TRUE(m.empty());
     }
 
-    // 测试 const 版本接口
-    TEST_F(UnorderedMultiMapTest, ConstInterface)
+    // 10. swap 交换内容
+    TEST_F(UnorderedMultimapTest, SwapExchangesContents)
     {
-        umm.insert(7);
-        umm.insert(7);
-        const auto &cumm = umm;
+        unordered_multimap<int, char> a{{1, 'a'}};
+        unordered_multimap<int, char> b{{2, 'b'}, {2, 'c'}};
+        a.swap(b); // swap 方法 
+        EXPECT_EQ(a.count(2), 2u);
+        EXPECT_EQ(b.count(1), 1u);
+    }
 
-        // const find
-        auto cit = cumm.find(7);
-        ASSERT_NE(cit, cumm.end());
-        EXPECT_EQ(*cit, 7);
+    // 11. 移动构造与移动赋值
+    TEST_F(UnorderedMultimapTest, MoveConstructorAndAssignment)
+    {
+        unordered_multimap<int, int> src;
+        src.emplace(7, 70);
+        // 移动构造
+        unordered_multimap<int, int> moved_ctor(std::move(src));
+        EXPECT_EQ(moved_ctor.count(7), 1u);
+        EXPECT_TRUE(src.empty()); // 源应变为空
 
-        // const equal_range
-        auto crange = cumm.equal_range(7);
-        size_t cnt = 0;
-        for (auto it = crange.first; it != crange.second; ++it)
-        {
-            EXPECT_EQ(*it, 7);
-            ++cnt;
-        }
-        EXPECT_EQ(cnt, 2u);
+        // 移动赋值
+        unordered_multimap<int, int> src2;
+        src2.emplace(8, 80);
+        unordered_multimap<int, int> moved_assign;
+        moved_assign = std::move(src2);
+        EXPECT_EQ(moved_assign.count(8), 1u);
+        EXPECT_TRUE(src2.empty());
     }
 };

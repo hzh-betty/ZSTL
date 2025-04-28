@@ -11,12 +11,12 @@ namespace zstl
             return kv1.first == kv2.first;
         }
 
-        bool operator()(const std::pair<K, V> &kv1, const K&key)
+        bool operator()(const std::pair<K, V> &kv1, const K &key)
         {
             return kv1.first == key;
         }
 
-        bool operator()(const K&key, const std::pair<K, V> &kv2)
+        bool operator()(const K &key, const std::pair<K, V> &kv2)
         {
             return key == kv2.first;
         }
@@ -48,13 +48,49 @@ namespace zstl
         }
     };
 
-    template <typename K, typename V, typename Hash = MapHashFunc
-    <K>, typename Compare = UMapCompare<K, V>>
+    template <typename K, typename V, typename Hash = MapHashFunc<K>, typename Compare = UMapCompare<K, V>>
     class unordered_map
     {
     public:
         using iterator = typename HashTable<K, std::pair<const K, V>, Hash, Compare>::iterator;
         using const_iterator = typename HashTable<K, std::pair<const K, V>, Hash, Compare>::const_iterator;
+        unordered_map() = default;
+        unordered_map(const unordered_map &) = default;
+        unordered_map &operator=(const unordered_map &) = default;
+        ~unordered_map() = default;
+
+        // 移动构造函数
+        unordered_map(unordered_map &&m) noexcept
+            : hash_table_(std::move(m.hash_table_))
+        {
+        }
+
+        // 移动赋值运算符
+        unordered_map &operator=(unordered_map &&m) noexcept
+        {
+            if (this != &m)
+            {
+                hash_table_ = std::move(m.hash_table_);
+            }
+            return *this;
+        }
+
+        // emplace 接口
+        template <typename... Args>
+        std::pair<iterator, bool> emplace(Args &&...args)
+        {
+            return hash_table_.emplace_unique(std::forward<Args>(args)...);
+        }
+
+        // initializer_list 构造函数
+        unordered_map(std::initializer_list<std::pair<const K, V>> il)
+        {
+            for (auto &e : il)
+            {
+                emplace(std::move(e));
+            }
+        }
+
         iterator begin()
         {
             return hash_table_.begin();
@@ -121,7 +157,7 @@ namespace zstl
         }
         size_t erase(const K &key)
         {
-            return hash_table_.erase(key) ;
+            return hash_table_.erase(key);
         }
 
         void clear()
@@ -148,12 +184,50 @@ namespace zstl
         HashTable<K, std::pair<const K, V>, Hash, Compare> hash_table_;
     };
 
-    template <typename K, typename Hash = SetHashFunc<K>, typename Compare = USetCompare<K>>
+    template <typename K, typename V, typename Hash = MapHashFunc<K>, typename Compare = UMapCompare<K, V>>
     class unordered_multimap
     {
     public:
-        using iterator = typename HashTable<K, K, Hash, Compare>::const_iterator;
-        using const_iterator = typename HashTable<K, K, Hash, Compare>::const_iterator;
+        using iterator = typename HashTable<K, std::pair<const K, V>, Hash, Compare>::iterator;
+        using const_iterator = typename HashTable<K, std::pair<const K, V>, Hash, Compare>::const_iterator;
+        unordered_multimap() = default;
+        unordered_multimap(const unordered_multimap &) = default;
+        unordered_multimap &operator=(const unordered_multimap &) = default;
+        ~unordered_multimap() = default;
+
+        // 移动构造函数
+        unordered_multimap(unordered_multimap &&m) noexcept
+            : hash_table_(std::move(m.hash_table_))
+        {
+        }
+
+        // 移动赋值运算符
+        unordered_multimap &operator=(unordered_multimap &&m) noexcept
+        {
+            if (this != &m)
+            {
+                swap(m);
+                m.clear();
+            }
+            return *this;
+        }
+
+        // emplace 接口
+        template <typename... Args>
+        iterator emplace(Args &&...args)
+        {
+            return hash_table_.emplace_duplicate(std::forward<Args>(args)...);
+        }
+
+        // initializer_list 构造函数
+        unordered_multimap(std::initializer_list<std::pair<const K, V>> il)
+        {
+            for (auto &e : il)
+            {
+                emplace(std::move(e));
+            }
+        }
+
         iterator begin()
         {
             return hash_table_.begin();
@@ -184,9 +258,9 @@ namespace zstl
             return hash_table_.equal_range(k);
         }
 
-        iterator insert(const K &key)
+        iterator insert(const std::pair<K, V> &data)
         {
-            return hash_table_.insert_duplicate(key);
+            return hash_table_.insert_duplicate(data);
         }
 
         iterator find(const K &key)
@@ -251,7 +325,7 @@ namespace zstl
         }
 
     private:
-        HashTable<K, K, Hash, Compare> hash_table_;
+        HashTable<K, std::pair<const K, V>, Hash, Compare> hash_table_;
     };
 
 };

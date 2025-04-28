@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <initializer_list>
 #include <cassert>
 
 namespace zstl
@@ -208,6 +209,16 @@ namespace zstl
             create_map(0);
         }
 
+        deque(std::initializer_list<T> it)
+        {
+            create_map(it.size());
+            iterator iter = start_;
+            for (auto &e : it)
+            {
+                *iter = e;
+                ++iter;
+            }
+        }
         // 用指定值初始化 deque
         deque(size_t n, const T &val)
         {

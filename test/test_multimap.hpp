@@ -4,18 +4,18 @@
 namespace zstl
 {
     // 空容器基本属性测试
-    TEST(MutiMapTest, EmptyContainer)
+    TEST(MultiMapTest, EmptyContainer)
     {
-        mutimap<int, int> m;           // 新建空 multimap
+        multimap<int, int> m;           // 新建空 multimap
         EXPECT_TRUE(m.empty());        // 应为空 :contentReference[oaicite:7]{index=7}
         EXPECT_EQ(m.size(), 0u);       // 大小为 0
         EXPECT_EQ(m.begin(), m.end()); // begin 应等于 end
     }
 
     // 单元素插入与查询测试
-    TEST(MutiMapTest, SingleElement)
+    TEST(MultiMapTest, SingleElement)
     {
-        mutimap<int, int> m;
+        multimap<int, int> m;
         auto it = m.insert({5, 100}); // 插入键值对 (5,100)
         ASSERT_NE(it, m.end());       // 插入应成功，迭代器不等于 end
         EXPECT_EQ(it->first, 5);      // 键为 5
@@ -37,9 +37,9 @@ namespace zstl
     }
 
     // 多重键插入与迭代顺序测试
-    TEST(MutiMapTest, MultipleKeys)
+    TEST(MultiMapTest, MultipleKeys)
     {
-        mutimap<int, char> m;
+        multimap<int, char> m;
         // 乱序插入
         m.insert({3, 'c'});
         m.insert({1, 'a'});
@@ -57,9 +57,9 @@ namespace zstl
     }
 
     // erase(key) 返回删除元素个数测试
-    TEST(MutiMapTest, EraseByKey)
+    TEST(MultiMapTest, EraseByKey)
     {
-        mutimap<int, int> m;
+        multimap<int, int> m;
         m.insert({0, 0});
         for (int i = 1; i <= 10; i++)
         {
@@ -81,9 +81,9 @@ namespace zstl
         EXPECT_EQ(m.find(2), m.end()); // 找不到 2
     }
     // 按迭代器删除单个与区间测试
-    TEST(MutiMapTest, EraseIteratorAndRange)
+    TEST(MultiMapTest, EraseIteratorAndRange)
     {
-        mutimap<int, int> m;
+        multimap<int, int> m;
         m.insert({1, 1});
         m.insert({2, 2});
         m.insert({3, 3});
@@ -100,9 +100,9 @@ namespace zstl
     }
 
     // clear() 恢复空容器测试
-    TEST(MutiMapTest, ClearAll)
+    TEST(MultiMapTest, ClearAll)
     {
-        mutimap<int, int> m;
+        multimap<int, int> m;
         m.insert({1, 10});
         m.insert({2, 20});
         EXPECT_FALSE(m.empty());
