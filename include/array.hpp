@@ -1,7 +1,7 @@
 #pragma once
 #include <cassert>
 #include <stdexcept>
-
+#include<initializer_list>
 namespace zstl
 {
 
@@ -68,6 +68,20 @@ namespace zstl
             }
         }
 
+        array() = default;
+        array(const array&) = default;
+        array&operator=(const array&) = default;
+        ~array() = default;
+
+        array(std::initializer_list<T> il)
+        {
+            size_t i = 0;
+            assert(il.size() <= N);
+            for(auto&e:il)
+            {
+                data_[i++] = e;
+            }
+        }
         // 返回数组大小
         constexpr size_t size() const noexcept { return N; }
         constexpr size_t max_size() const noexcept { return N; }

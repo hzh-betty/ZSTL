@@ -181,4 +181,46 @@ namespace zstl
         EXPECT_TRUE(us.empty());
     }
 
+    // 测试移动构造
+    TEST_F(UnorderedSetTest, MoveConstructor)
+    {
+        unordered_set<int> us1;
+        us1.insert(1);
+        us1.insert(2);
+        us1.insert(3);
+
+        unordered_set<int> us2(std::move(us1));
+        EXPECT_EQ(us2.size(), 3);
+        EXPECT_EQ(us2.count(1), 1);
+        EXPECT_EQ(us2.count(2), 1);
+        EXPECT_EQ(us2.count(3), 1);
+        EXPECT_EQ(us1.size(), 0);
+    }
+
+    // 测试移动赋值
+    TEST_F(UnorderedSetTest, MoveAssignment)
+    {
+        unordered_set<int> us1;
+        us1.insert(1);
+        us1.insert(2);
+        us1.insert(3);
+
+        unordered_set<int> us2;
+        us2 = std::move(us1);
+        EXPECT_EQ(us2.size(), 3);
+        EXPECT_EQ(us2.count(1), 1);
+        EXPECT_EQ(us2.count(2), 1);
+        EXPECT_EQ(us2.count(3), 1);
+        EXPECT_EQ(us1.size(), 0);
+    }
+
+    // 测试 initializer_list 构造
+    TEST_F(UnorderedSetTest, InitializerListConstructor)
+    {
+        unordered_set<int> us = {1, 2, 3};
+        EXPECT_EQ(us.size(), 3);
+        EXPECT_EQ(us.count(1), 1);
+        EXPECT_EQ(us.count(2), 1);
+        EXPECT_EQ(us.count(3), 1);
+    }
 };

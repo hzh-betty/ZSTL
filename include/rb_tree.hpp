@@ -207,10 +207,9 @@ namespace zstl
         {
             if (this != &t)
             {
+                RBTree tmp(t);
                 clear();
-                header_->parent_ = copy(t.header_->parent_);
-                adjust_header_pointers(header_->parent_);
-                size_ = t.size_;
+                swap(tmp);
             }
             return *this;
         }
@@ -352,8 +351,7 @@ namespace zstl
             Node *newnode = new Node(std::move(data));
             newnode->parent_ = parent;
             size_++;
-            link_node(newnode,parent,data);
-
+            link_node(newnode, parent, data);
 
             // 3. 红黑树重平衡
             adjust_insert(newnode, parent);
@@ -385,7 +383,7 @@ namespace zstl
             Node *newnode = new Node(std::move(data));
             newnode->parent_ = parent;
             size_++;
-            link_node(newnode,parent,data);
+            link_node(newnode, parent, data);
 
             // 3. 红黑树重平衡
             adjust_insert(newnode, parent);
@@ -419,8 +417,7 @@ namespace zstl
             Node *newnode = new Node(data);
             newnode->parent_ = parent;
             size_++;
-            link_node(newnode,parent,data);
-
+            link_node(newnode, parent, data);
 
             // 3. 红黑树重平衡
             adjust_insert(newnode, parent);
@@ -450,7 +447,7 @@ namespace zstl
             Node *newnode = new Node(data);
             newnode->parent_ = parent;
             size_++;
-            link_node(newnode,parent,data);
+            link_node(newnode, parent, data);
 
             // 3. 红黑树重平衡
             adjust_insert(newnode, parent);
@@ -569,6 +566,11 @@ namespace zstl
             return size_ == 0;
         }
 
+        void swap(RBTree &rb_tree)
+        {
+            std::swap(header_, rb_tree.header_);
+            std::swap(size_, rb_tree.size_);
+        }
         // 清空节点
         void clear()
         {
@@ -581,8 +583,11 @@ namespace zstl
 
         ~RBTree()
         {
-            clear();
-            delete header_;
+            if (header_)
+            {
+                clear();
+                delete header_;
+            }
         }
 
     private:
@@ -680,7 +685,7 @@ namespace zstl
         }
 
         // 插入链接节点
-        void link_node(Node *newnode, Node *parent,const T&data)
+        void link_node(Node *newnode, Node *parent, const T &data)
         {
             Compare com;
             if (parent == header_)

@@ -96,9 +96,12 @@ namespace zstl
         // 析构：清空所有节点并删除头节点
         ~forward_list()
         {
-            clear();
-            delete header_;
-            header_ = nullptr;
+            if (header_)
+            {
+                clear();
+                delete header_;
+                header_ = nullptr;
+            }
         }
 
         // 复制构造：深拷贝链表数据
@@ -117,9 +120,13 @@ namespace zstl
         }
 
         // 赋值运算：拷贝并交换
-        forward_list &operator=(forward_list other)
+        forward_list &operator=(const forward_list &other)
         {
-            swap(other);
+            if (this != &other)
+            {
+                forward_list<T> tmp(other);
+                swap(tmp);
+            }
             return *this;
         }
 

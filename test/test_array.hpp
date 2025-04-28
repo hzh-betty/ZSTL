@@ -84,4 +84,14 @@ namespace zstl
         }
         EXPECT_EQ(cnt, a.size());
     }
+
+    // 测试 initializer_list 构造（注意：array 没有移动构造和移动赋值）
+    TEST(ArrayTest, InitializerListConstructor)
+    {
+        array<int, 3> a = {1, 2, 3};
+        EXPECT_EQ(a.size(), 3u);
+        EXPECT_EQ(a[0], 1);
+        EXPECT_EQ(a[1], 2);
+        EXPECT_EQ(a[2], 3);
+    }
 }; // namespace zstl

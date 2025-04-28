@@ -123,4 +123,46 @@ namespace zstl
         }
     }
 
+    // 测试移动构造
+    TEST_F(MapTest, MoveConstructor)
+    {
+        map<int, string> m1;
+        m1[1] = "one";
+        m1[2] = "two";
+        m1[3] = "three";
+
+        map<int, string> m2(std::move(m1));
+        EXPECT_EQ(m2.size(), 3);
+        EXPECT_EQ(m2[1], "one");
+        EXPECT_EQ(m2[2], "two");
+        EXPECT_EQ(m2[3], "three");
+        EXPECT_TRUE(m1.empty());
+    }
+
+    // 测试移动赋值
+    TEST_F(MapTest, MoveAssignment)
+    {
+        map<int, string> m1;
+        m1[1] = "one";
+        m1[2] = "two";
+        m1[3] = "three";
+
+        map<int, string> m2;
+        m2 = std::move(m1);
+        EXPECT_EQ(m2.size(), 3);
+        EXPECT_EQ(m2[1], "one");
+        EXPECT_EQ(m2[2], "two");
+        EXPECT_EQ(m2[3], "three");
+        EXPECT_TRUE(m1.empty());
+    }
+
+    // 测试 initializer_list 构造
+    TEST_F(MapTest, InitializerListConstructor)
+    {
+        map<int, string> m = {{1, "one"}, {2, "two"}, {3, "three"}};
+        EXPECT_EQ(m.size(), 3);
+        EXPECT_EQ(m[1], "one");
+        EXPECT_EQ(m[2], "two");
+        EXPECT_EQ(m[3], "three");
+    }
 };

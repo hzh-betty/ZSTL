@@ -179,4 +179,47 @@ namespace zstl
         EXPECT_EQ(d.back(), 42);
     }
 
+    // 测试移动构造
+    TEST_F(DequeTest, MoveConstructor)
+    {
+        deque<int> d1;
+        d1.push_back(1);
+        d1.push_back(2);
+        d1.push_back(3);
+
+        deque<int> d2(std::move(d1));
+        EXPECT_EQ(d2.size(), 3);
+        EXPECT_EQ(d2[0], 1);
+        EXPECT_EQ(d2[1], 2);
+        EXPECT_EQ(d2[2], 3);
+        EXPECT_TRUE(d1.empty());
+    }
+
+    // 测试移动赋值
+    TEST_F(DequeTest, MoveAssignment)
+    {
+        deque<int> d1;
+        d1.push_back(1);
+        d1.push_back(2);
+        d1.push_back(3);
+
+        deque<int> d2;
+        d2 = std::move(d1);
+        EXPECT_EQ(d2.size(), 3);
+        EXPECT_EQ(d2[0], 1);
+        EXPECT_EQ(d2[1], 2);
+        EXPECT_EQ(d2[2], 3);
+        EXPECT_TRUE(d1.empty());
+    }
+
+    // 测试 initializer_list 构造
+    TEST_F(DequeTest, InitializerListConstructor)
+    {
+        deque<int> d = {1, 2, 3};
+        EXPECT_EQ(d.size(), 3);
+        EXPECT_EQ(d[0], 1);
+        EXPECT_EQ(d[1], 2);
+        EXPECT_EQ(d[2], 3);
+    }
+
 };

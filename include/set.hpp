@@ -87,7 +87,8 @@ namespace zstl
         {
             if (this != &other)
             {
-                rb_tree_ = std::move(other.rb_tree_);
+                swap(other);
+                other.clear();
             }
             return *this;
         }
@@ -133,6 +134,11 @@ namespace zstl
             return rb_tree_.find(key);
         }
 
+        void clear()
+        {
+            rb_tree_.clear();
+        }
+
         bool empty() const
         {
             return rb_tree_.empty();
@@ -141,6 +147,16 @@ namespace zstl
         size_t size() const
         {
             return rb_tree_.size();
+        }
+
+        void swap(set &s)
+        {
+            rb_tree_.swap(s.rb_tree_);
+        }
+
+        size_t count(const K &key) const
+        {
+            return find(key) != end() ? 1 : 0;
         }
 
     private:
@@ -233,7 +249,8 @@ namespace zstl
         {
             if (this != &other)
             {
-                rb_tree_ = std::move(other.rb_tree_);
+                swap(other);
+                other.clear();
             }
             return *this;
         }
@@ -269,6 +286,25 @@ namespace zstl
             return rb_tree_.find(key);
         }
 
+        size_t count(const K &key) const
+        {
+            auto p = equal_range(key);
+            const_iterator it_first = p.first;
+            const_iterator it_second = p.second;
+            size_t cnt = 0;
+            while (it_first != it_second)
+            {
+                ++it_first;
+                ++cnt;
+            }
+            return cnt;
+        }
+        
+        void clear()
+        {
+            rb_tree_.clear();
+        }
+
         bool empty() const
         {
             return rb_tree_.empty();
@@ -277,6 +313,11 @@ namespace zstl
         size_t size() const
         {
             return rb_tree_.size();
+        }
+
+        void swap(multiset &s)
+        {
+            rb_tree_.swap(s.rb_tree_);
         }
 
     private:

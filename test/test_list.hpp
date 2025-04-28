@@ -231,4 +231,59 @@ namespace zstl
         EXPECT_EQ(ls.front(), "hello");
         EXPECT_EQ(ls.back(), "world");
     }
+
+    // 测试移动构造
+    TEST(ListTest, MoveConstructor)
+    {
+        list<int> li1;
+        li1.push_back(1);
+        li1.push_back(2);
+        li1.push_back(3);
+
+        list<int> li2(std::move(li1));
+        std::cout<<"11111111"<<std::endl;
+        EXPECT_EQ(li2.size(), 3);
+        auto it = li2.begin();
+        EXPECT_EQ(*it, 1);
+        std::cout<<"22222222"<<std::endl;
+        ++it;
+        EXPECT_EQ(*it, 2);
+        ++it;
+        EXPECT_EQ(*it, 3);
+        EXPECT_EQ(li1.size(), 0);
+        std::cout<<"33333333"<<std::endl;
+    }
+
+    // 测试移动赋值
+    TEST(ListTest, MoveAssignment)
+    {
+        list<int> li1;
+        li1.push_back(1);
+        li1.push_back(2);
+        li1.push_back(3);
+
+        list<int> li2;
+        li2 = std::move(li1);
+        EXPECT_EQ(li2.size(), 3);
+        auto it = li2.begin();
+        EXPECT_EQ(*it, 1);
+        ++it;
+        EXPECT_EQ(*it, 2);
+        ++it;
+        EXPECT_EQ(*it, 3);
+        EXPECT_EQ(li1.size(), 0);
+    }
+
+    // 测试 initializer_list 构造
+    TEST(ListTest, InitializerListConstructor)
+    {
+        list<int> li = {1, 2, 3};
+        EXPECT_EQ(li.size(), 3);
+        auto it = li.begin();
+        EXPECT_EQ(*it, 1);
+        ++it;
+        EXPECT_EQ(*it, 2);
+        ++it;
+        EXPECT_EQ(*it, 3);
+    }
 };

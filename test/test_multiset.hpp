@@ -123,7 +123,7 @@ namespace zstl
         // 删除所有值为 2 的元素
         size_t removed = ms.erase(2);
 
-        EXPECT_EQ(removed, 10);   // 应删除100个2
+        EXPECT_EQ(removed, 10);    // 应删除100个2
         EXPECT_EQ(ms.size(), 992); // 剩余元素数为 902
         EXPECT_EQ(*ms.begin(), 0);
         EXPECT_EQ(*(--ms.end()), 101);
@@ -185,4 +185,44 @@ namespace zstl
         // 不要解引用空容器迭代器，以下行为未定义，仅测试相等性
     }
 
+    // 测试移动构造
+    TEST_F(MultiSetTest, MoveConstructor)
+    {
+        ms.insert(1);
+        ms.insert(2);
+        ms.insert(3);
+
+        multiset<int> ms2(std::move(ms));
+        EXPECT_EQ(ms2.size(), 3);
+        EXPECT_EQ(ms2.count(1), 1);
+        EXPECT_EQ(ms2.count(2), 1);
+        EXPECT_EQ(ms2.count(3), 1);
+        EXPECT_EQ(ms.size(), 0);
+    }
+
+    // 测试移动赋值
+    TEST_F(MultiSetTest, MoveAssignment)
+    {
+        ms.insert(1);
+        ms.insert(2);
+        ms.insert(3);
+
+        multiset<int> ms2;
+        ms2 = std::move(ms);
+        EXPECT_EQ(ms2.size(), 3);
+        EXPECT_EQ(ms2.count(1), 1);
+        EXPECT_EQ(ms2.count(2), 1);
+        EXPECT_EQ(ms2.count(3), 1);
+        EXPECT_EQ(ms.size(), 0);
+    }
+
+    // 测试 initializer_list 构造
+    TEST_F(MultiSetTest, InitializerListConstructor)
+    {
+        multiset<int> ms = {1, 2, 3};
+        EXPECT_EQ(ms.size(), 3);
+        EXPECT_EQ(ms.count(1), 1);
+        EXPECT_EQ(ms.count(2), 1);
+        EXPECT_EQ(ms.count(3), 1);
+    }
 };

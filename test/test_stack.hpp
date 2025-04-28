@@ -93,4 +93,42 @@ namespace zstl
         ss.push(20);
         EXPECT_EQ(ss.top(), 20);
     }
+
+    // 测试移动构造
+    TEST(StackTest, MoveConstructor)
+    {
+        stack<int> s1;
+        s1.push(1);
+        s1.push(2);
+        s1.push(3);
+
+        stack<int> s2(std::move(s1));
+        EXPECT_EQ(s2.size(), 3);
+        EXPECT_EQ(s2.top(), 3);
+        s2.pop();
+        EXPECT_EQ(s2.top(), 2);
+        s2.pop();
+        EXPECT_EQ(s2.top(), 1);
+        EXPECT_TRUE(s1.empty());
+    }
+
+    // 测试移动赋值
+    TEST(StackTest, MoveAssignment)
+    {
+        stack<int> s1;
+        s1.push(1);
+        s1.push(2);
+        s1.push(3);
+
+        stack<int> s2;
+        s2 = std::move(s1);
+        EXPECT_EQ(s2.size(), 3);
+        EXPECT_EQ(s2.top(), 3);
+        s2.pop();
+        EXPECT_EQ(s2.top(), 2);
+        s2.pop();
+        EXPECT_EQ(s2.top(), 1);
+        EXPECT_TRUE(s1.empty());
+    }
+
 };

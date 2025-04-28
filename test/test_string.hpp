@@ -148,4 +148,28 @@ namespace zstl
         EXPECT_STREQ(outputStream.str().c_str(), "HelloWorld") << "输出运算符 << 写入数据错误";
     }
 
+    // 测试移动构造函数
+    TEST(StringTest, MoveConstructor)
+    {
+        zstl::string src("Hello");
+        zstl::string dst(std::move(src));
+
+        EXPECT_EQ(std::string(dst.c_str()), "Hello");
+        EXPECT_EQ(src.size(), 0);
+        EXPECT_EQ(src.capacity(), 0);
+        EXPECT_EQ(src.c_str(), nullptr);
+    }
+
+    // 测试移动赋值运算符
+    TEST(StringTest, MoveAssignment)
+    {
+        zstl::string src("World");
+        zstl::string dst;
+        dst = std::move(src);
+
+        EXPECT_EQ(std::string(dst.c_str()), "World");
+        EXPECT_EQ(src.size(), 0);
+        EXPECT_EQ(src.capacity(), 0);
+        EXPECT_EQ(src.c_str(), nullptr);
+    }
 };

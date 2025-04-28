@@ -66,9 +66,13 @@ namespace zstl
         }
 
         // 赋值重载
-        vector<T> &operator=(vector<T> v)
+        vector<T> &operator=(const vector<T> &v)
         {
-            swap(v);
+            if(this != &v)
+            {
+                vector<T> tmp(v);
+                swap(tmp);
+            }
             return *this;
         }
 
@@ -121,6 +125,7 @@ namespace zstl
                 end_of_storage_ = v.end_of_storage_;
                 v.start_ = v.finish_ = v.end_of_storage_ = nullptr;
             }
+            return *this;
         }
 
         // emplace_back 接口

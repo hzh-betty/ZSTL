@@ -62,7 +62,8 @@ namespace zstl
         {
             if (this != &s)
             {
-                hash_table_ = std::move(s.hash_table_);
+                swap(s);
+                s.clear();
             }
             return *this;
         }
@@ -192,14 +193,15 @@ namespace zstl
         {
             if (this != &s)
             {
-                hash_table_ = std::move(s.hash_table_);
+                swap(s);
+                s.clear();
             }
             return *this;
         }
 
         // emplace 接口
         template <typename... Args>
-        std::pair<iterator, bool> emplace(Args &&...args)
+        iterator emplace(Args &&...args)
         {
             return hash_table_.emplace_duplicate(std::forward<Args>(args)...);
         }

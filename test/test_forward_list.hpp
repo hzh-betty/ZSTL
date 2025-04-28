@@ -112,4 +112,56 @@ namespace zstl
         EXPECT_EQ(idx, 3);
     }
 
+    // 测试移动构造
+    TEST(ForwardListTest, MoveConstructor)
+    {
+        forward_list<int> lst1;
+        lst1.push_front(1);
+        lst1.push_front(2);
+        lst1.push_front(3);
+
+        forward_list<int> lst2(std::move(lst1));
+        int expected[] = {3, 2, 1};
+        int idx = 0;
+        for (auto it = lst2.begin(); it != lst2.end(); ++it)
+        {
+            EXPECT_EQ(*it, expected[idx++]);
+        }
+        EXPECT_EQ(idx, 3);
+        EXPECT_TRUE(lst1.begin() == lst1.end());
+    }
+
+    // 测试移动赋值
+    TEST(ForwardListTest, MoveAssignment)
+    {
+        forward_list<int> lst1;
+        lst1.push_front(1);
+        lst1.push_front(2);
+        lst1.push_front(3);
+
+        forward_list<int> lst2;
+        lst2 = std::move(lst1);
+        int expected[] = {3, 2, 1};
+        int idx = 0;
+        for (auto it = lst2.begin(); it != lst2.end(); ++it)
+        {
+            EXPECT_EQ(*it, expected[idx++]);
+        }
+        EXPECT_EQ(idx, 3);
+        EXPECT_TRUE(lst1.begin() == lst1.end());
+
+    }
+
+    // 测试 initializer_list 构造
+    TEST(ForwardListTest, InitializerListConstructor)
+    {
+        forward_list<int> lst = {1, 2, 3};
+        int expected[] = {1, 2, 3};
+        int idx = 0;
+        for (auto it = lst.begin(); it != lst.end(); ++it)
+        {
+            EXPECT_EQ(*it, expected[idx++]);
+        }
+        EXPECT_EQ(idx, 3);
+    }
 };

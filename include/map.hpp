@@ -94,7 +94,8 @@ namespace zstl
         {
             if (this != &other)
             {
-                rb_tree_ = std::move(other.rb_tree_);
+                swap(other);
+                other.clear();
             }
             return *this;
         }
@@ -160,6 +161,15 @@ namespace zstl
         void clear()
         {
             return rb_tree_.clear();
+        }
+
+        void swap(map &m)
+        {
+            rb_tree_.swap(m.rb_tree_);
+        }
+        size_t count(const K &key) const
+        {
+            return find(key) != end() ? 1 : 0;
         }
 
     private:
@@ -257,7 +267,8 @@ namespace zstl
         {
             if (this != &other)
             {
-                rb_tree_ = std::move(other.rb_tree_);
+                swap(other);
+                other.clear();
             }
             return *this;
         }
@@ -273,7 +284,7 @@ namespace zstl
 
         // emplace 接口
         template <typename... Args>
-        std::pair<iterator, bool> emplace(Args &&...args)
+        iterator emplace(Args &&...args)
         {
             return rb_tree_.emplace_duplicate(std::forward<Args>(args)...);
         }
@@ -296,6 +307,25 @@ namespace zstl
         void clear()
         {
             return rb_tree_.clear();
+        }
+
+        void swap(multimap &m)
+        {
+            rb_tree_.swap(m.rb_tree_);
+        }
+
+        size_t count(const K &key) const
+        {
+            auto p = equal_range(key);
+            const_iterator it_first = p.first;
+            const_iterator it_second = p.second;
+            size_t cnt = 0;
+            while (it_first != it_second)
+            {
+                ++it_first;
+                ++cnt;
+            }
+            return cnt;
         }
 
     private:

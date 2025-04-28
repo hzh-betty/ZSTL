@@ -70,7 +70,8 @@ namespace zstl
         {
             if (this != &m)
             {
-                hash_table_ = std::move(m.hash_table_);
+                swap(m);
+                m.clear();
             }
             return *this;
         }

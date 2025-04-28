@@ -71,7 +71,7 @@ namespace zstl
     TEST_F(UnorderedMultimapTest, EqualRangeIteratesAll)
     {
         unordered_multimap<int, char> m{{1, 'a'}, {1, 'b'}, {1, 'd'}, {2, 'z'}};
-        auto range = m.equal_range(1); // equal_range 
+        auto range = m.equal_range(1); // equal_range
         size_t cnt = 0;
         for (auto iter = range.first; iter != range.second; ++iter)
         {
@@ -122,7 +122,7 @@ namespace zstl
     {
         unordered_multimap<int, char> a{{1, 'a'}};
         unordered_multimap<int, char> b{{2, 'b'}, {2, 'c'}};
-        a.swap(b); // swap 方法 
+        a.swap(b); // swap 方法
         EXPECT_EQ(a.count(2), 2u);
         EXPECT_EQ(b.count(1), 1u);
     }
@@ -145,4 +145,5 @@ namespace zstl
         EXPECT_EQ(moved_assign.count(8), 1u);
         EXPECT_TRUE(src2.empty());
     }
+
 };

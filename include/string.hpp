@@ -36,9 +36,13 @@ namespace zstl
         }
 
         // 赋值运算符：传值调用自动复用拷贝构造
-        string &operator=(string tmp)
+        string &operator=(const string&str)
         {
-            swap(tmp); // 交换资源后tmp自动析构旧数据
+            if(this != &str)
+            {
+                string tmp(str);
+                swap(tmp); // 交换资源后tmp自动析构旧数据
+            }
             return *this;
         }
         // 移动构造函数
@@ -258,9 +262,12 @@ namespace zstl
         // 析构函数：释放堆内存
         ~string()
         {
-            delete[] str_;  // 释放字符数组
-            str_ = nullptr; // 防止悬垂指针
-            size_ = capacity_ = 0;
+            if(str_)
+            {
+                delete[] str_;  // 释放字符数组
+                str_ = nullptr; // 防止悬垂指针
+                size_ = capacity_ = 0;
+            }
         }
 
         // 高效交换：直接交换成员变量

@@ -50,6 +50,7 @@ namespace zstl
         // 计算两个迭代器之间的距离
         int operator-(const Self &x) const
         {
+            if(*this == x) return 0;
             return int(BufferSize * (node_ - x.node_ - 1)) +
                    (cur_ - first_) +
                    (x.last_ - x.cur_);
@@ -244,9 +245,13 @@ namespace zstl
         }
 
         // 赋值运算符重载
-        deque<T> &operator=(deque d)
+        deque<T> &operator=(const deque &d)
         {
-            swap(d);
+            if (this != &d)
+            {
+                deque<T> tmp(d);
+                swap(tmp);
+            }
             return *this;
         }
 
@@ -255,8 +260,8 @@ namespace zstl
             : start_(d.start_), finish_(d.finish_), map_(d.map_), map_size_(d.map_size_)
         {
             d.start_ = d.finish_ = iterator();
-            d.map = nullptr;
-            d.mapsize_ = 0;
+            d.map_ = nullptr;
+            d.map_size_ = 0;
         }
 
         // 移动赋值
@@ -488,7 +493,7 @@ namespace zstl
         }
 
         // 获取 deque 的大小
-        int size() const
+        size_t size() const
         {
             return finish_ - start_;
         }
@@ -526,14 +531,17 @@ namespace zstl
         // 析构函数，清理所有资源
         ~deque()
         {
-            for (map_pointer node = start_.node_; node <= finish_.node_; ++node)
+            if (map_)
             {
-                delete[] *node;
-            }
+                for (map_pointer node = start_.node_; node <= finish_.node_; ++node)
+                {
+                    delete[] *node;
+                }
 
-            delete[] map_;
-            start_ = finish_ = iterator();
-            map_size_ = 0;
+                delete[] map_;
+                start_ = finish_ = iterator();
+                map_size_ = 0;
+            }
         }
 
     private:

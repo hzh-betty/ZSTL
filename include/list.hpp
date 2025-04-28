@@ -98,7 +98,7 @@ namespace zstl
         }
     };
 
-    /*模拟 C++ STL 的 list 类模板，实现双向链表*/
+    /*list 类模板，实现双向链表*/
     template <typename T>
     class list
     {
@@ -170,11 +170,16 @@ namespace zstl
         }
 
         // 赋值运算符，采用拷贝-交换策略
-        list<T> &operator=(list<T> it)
+        list<T> &operator=(const list<T> &it)
         {
-            swap(it);
+            if (this != &it)
+            {
+                list<T> tmp(it);
+                swap(tmp);
+            }
             return *this;
         }
+
         // 移动构造函数
         list(list &&other)
             : head_(other.head_), size_(other.size_)
@@ -348,9 +353,12 @@ namespace zstl
         // 析构函数，清空链表并释放头节点内存
         ~list()
         {
-            clear();
-            delete head_;
-            head_ = nullptr;
+            if (head_ != nullptr)
+            {
+                clear();
+                delete head_;
+                head_ = nullptr;
+            }
         }
 
     private:

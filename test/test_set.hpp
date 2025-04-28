@@ -221,4 +221,55 @@ namespace zstl
         EXPECT_NE(s1.find(2), s1.end());
     }
 
+    // 测试移动构造
+    TEST(SetTest, MoveConstructor)
+    {
+        set<int> s1;
+        s1.insert(1);
+        s1.insert(2);
+        s1.insert(3);
+
+        set<int> s2(std::move(s1));
+        EXPECT_EQ(s2.size(), 3);
+        auto it = s2.begin();
+        EXPECT_EQ(*it, 1);
+        ++it;
+        EXPECT_EQ(*it, 2);
+        ++it;
+        EXPECT_EQ(*it, 3);
+        EXPECT_EQ(s1.size(), 0);
+    }
+
+    // 测试移动赋值
+    TEST(SetTest, MoveAssignment)
+    {
+        set<int> s1;
+        s1.insert(1);
+        s1.insert(2);
+        s1.insert(3);
+
+        set<int> s2;
+        s2 = std::move(s1);
+        EXPECT_EQ(s2.size(), 3);
+        auto it = s2.begin();
+        EXPECT_EQ(*it, 1);
+        ++it;
+        EXPECT_EQ(*it, 2);
+        ++it;
+        EXPECT_EQ(*it, 3);
+        EXPECT_EQ(s1.size(), 0);
+    }
+
+    // 测试 initializer_list 构造
+    TEST(SetTest, InitializerListConstructor)
+    {
+        set<int> s = {1, 2, 3};
+        EXPECT_EQ(s.size(), 3);
+        auto it = s.begin();
+        EXPECT_EQ(*it, 1);
+        ++it;
+        EXPECT_EQ(*it, 2);
+        ++it;
+        EXPECT_EQ(*it, 3);
+    }
 }; // namespace zstl

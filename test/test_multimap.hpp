@@ -6,7 +6,7 @@ namespace zstl
     // 空容器基本属性测试
     TEST(MultiMapTest, EmptyContainer)
     {
-        multimap<int, int> m;           // 新建空 multimap
+        multimap<int, int> m;          // 新建空 multimap
         EXPECT_TRUE(m.empty());        // 应为空 :contentReference[oaicite:7]{index=7}
         EXPECT_EQ(m.size(), 0u);       // 大小为 0
         EXPECT_EQ(m.begin(), m.end()); // begin 应等于 end
@@ -110,5 +110,66 @@ namespace zstl
         EXPECT_TRUE(m.empty());
         EXPECT_EQ(m.size(), 0u);
         EXPECT_EQ(m.begin(), m.end());
+    }
+
+    // 测试移动构造
+    TEST(MultiMapTest, MoveConstructor)
+    {
+        multimap<int, int> m1;
+        m1.insert({1, 10});
+        m1.insert({2, 20});
+        m1.insert({3, 30});
+
+        multimap<int, int> m2(std::move(m1));
+        EXPECT_EQ(m2.size(), 3);
+        auto it = m2.begin();
+        EXPECT_EQ(it->first, 1);
+        EXPECT_EQ(it->second, 10);
+        ++it;
+        EXPECT_EQ(it->first, 2);
+        EXPECT_EQ(it->second, 20);
+        ++it;
+        EXPECT_EQ(it->first, 3);
+        EXPECT_EQ(it->second, 30);
+        EXPECT_EQ(m1.size(), 0);
+    }
+
+    // 测试移动赋值
+    TEST(MultiMapTest, MoveAssignment)
+    {
+        multimap<int, int> m1;
+        m1.insert({1, 10});
+        m1.insert({2, 20});
+        m1.insert({3, 30});
+
+        multimap<int, int> m2;
+        m2 = std::move(m1);
+        EXPECT_EQ(m2.size(), 3);
+        auto it = m2.begin();
+        EXPECT_EQ(it->first, 1);
+        EXPECT_EQ(it->second, 10);
+        ++it;
+        EXPECT_EQ(it->first, 2);
+        EXPECT_EQ(it->second, 20);
+        ++it;
+        EXPECT_EQ(it->first, 3);
+        EXPECT_EQ(it->second, 30);
+        EXPECT_EQ(m1.size(), 0);
+    }
+
+    // 测试 initializer_list 构造
+    TEST(MultiMapTest, InitializerListConstructor)
+    {
+        multimap<int, int> m = {{1, 10}, {2, 20}, {3, 30}};
+        EXPECT_EQ(m.size(), 3);
+        auto it = m.begin();
+        EXPECT_EQ(it->first, 1);
+        EXPECT_EQ(it->second, 10);
+        ++it;
+        EXPECT_EQ(it->first, 2);
+        EXPECT_EQ(it->second, 20);
+        ++it;
+        EXPECT_EQ(it->first, 3);
+        EXPECT_EQ(it->second, 30);
     }
 }; // namespace zstl

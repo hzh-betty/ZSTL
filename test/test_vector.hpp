@@ -182,4 +182,46 @@ namespace zstl
             EXPECT_EQ(*it, expected++);
         }
     }
+    // 测试移动构造
+    TEST(VectorTest, MoveConstructor)
+    {
+        vector<int> vec1;
+        vec1.push_back(1);
+        vec1.push_back(2);
+        vec1.push_back(3);
+
+        vector<int> vec2(std::move(vec1));
+        EXPECT_EQ(vec2.size(), 3u);
+        EXPECT_EQ(vec2[0], 1);
+        EXPECT_EQ(vec2[1], 2);
+        EXPECT_EQ(vec2[2], 3);
+        EXPECT_TRUE(vec1.empty());
+    }
+
+    // 测试移动赋值
+    TEST(VectorTest, MoveAssignment)
+    {
+        vector<int> vec1;
+        vec1.push_back(1);
+        vec1.push_back(2);
+        vec1.push_back(3);
+
+        vector<int> vec2;
+        vec2 = std::move(vec1);
+        EXPECT_EQ(vec2.size(), 3u);
+        EXPECT_EQ(vec2[0], 1);
+        EXPECT_EQ(vec2[1], 2);
+        EXPECT_EQ(vec2[2], 3);
+        EXPECT_TRUE(vec1.empty());
+    }
+
+    // 测试 initializer_list 构造
+    TEST(VectorTest, InitializerListConstructor)
+    {
+        vector<int> vec = {1, 2, 3};
+        EXPECT_EQ(vec.size(), 3u);
+        EXPECT_EQ(vec[0], 1);
+        EXPECT_EQ(vec[1], 2);
+        EXPECT_EQ(vec[2], 3);
+    }
 };

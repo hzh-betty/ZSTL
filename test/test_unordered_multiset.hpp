@@ -162,4 +162,47 @@ namespace zstl
         EXPECT_EQ(*ms.find(101), 101);
         EXPECT_EQ(ms.find(2), ms.end()); // 找不到 2
     }
+
+    // 测试移动构造
+    TEST(UnorderedMultisetTest, MoveConstructor)
+    {
+        unordered_multiset<int> ms1;
+        ms1.insert(1);
+        ms1.insert(2);
+        ms1.insert(3);
+
+        unordered_multiset<int> ms2(std::move(ms1));
+        EXPECT_EQ(ms2.size(), 3);
+        EXPECT_EQ(ms2.count(1), 1);
+        EXPECT_EQ(ms2.count(2), 1);
+        EXPECT_EQ(ms2.count(3), 1);
+        EXPECT_EQ(ms1.size(), 0);
+    }
+
+    // 测试移动赋值
+    TEST(UnorderedMultisetTest, MoveAssignment)
+    {
+        unordered_multiset<int> ms1;
+        ms1.insert(1);
+        ms1.insert(2);
+        ms1.insert(3);
+
+        unordered_multiset<int> ms2;
+        ms2 = std::move(ms1);
+        EXPECT_EQ(ms2.size(), 3);
+        EXPECT_EQ(ms2.count(1), 1);
+        EXPECT_EQ(ms2.count(2), 1);
+        EXPECT_EQ(ms2.count(3), 1);
+        EXPECT_EQ(ms1.size(), 0);
+    }
+
+    // 测试 initializer_list 构造
+    TEST(UnorderedMultisetTest, InitializerListConstructor)
+    {
+        unordered_multiset<int> ms = {1, 2, 3};
+        EXPECT_EQ(ms.size(), 3);
+        EXPECT_EQ(ms.count(1), 1);
+        EXPECT_EQ(ms.count(2), 1);
+        EXPECT_EQ(ms.count(3), 1);
+    }
 }; // namespace zstl
