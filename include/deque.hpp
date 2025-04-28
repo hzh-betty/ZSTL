@@ -35,19 +35,19 @@ namespace zstl
         }
 
         // 重载解引用运算符，返回当前指向的元素
-        Ref operator*()const
+        Ref operator*() const
         {
             return *cur_;
         }
 
         // 重载箭头运算符，返回当前指向的元素指针
-        Ptr operator->()const
+        Ptr operator->() const
         {
             return cur_;
         }
 
         // 计算两个迭代器之间的距离
-        int operator-(const Self &x)const
+        int operator-(const Self &x) const
         {
             return int(BufferSize * (node_ - x.node_ - 1)) +
                    (cur_ - first_) +
@@ -159,13 +159,12 @@ namespace zstl
         {
             return node_ == s.node_ ? cur_ < s.cur_ : node_ < s.node_;
         }
-        
+
         // 大于等于运算符
         bool operator>=(const Self &s) const
         {
             return !(*this < s);
         }
-        
 
         // 小于等于运算符
         bool operator<=(const Self &s) const
@@ -240,6 +239,40 @@ namespace zstl
             return *this;
         }
 
+        // 移动构造
+        deque(deque &&d)
+            : start_(d.start_), finish_(d.finish_), map_(d.map_), map_size_(d.map_size_)
+        {
+            d.start_ = d.finish_ = iterator();
+            d.map = nullptr;
+            d.mapsize_ = 0;
+        }
+
+        // 移动赋值
+        deque &operator=(deque &&d)
+        {
+            if (this != &d)
+            {
+                clear();
+                delete[] map_;
+                start_ = d.start_;
+                finish_ = d.finish_;
+                map_ = d.map_;
+                map_size_ = d.map_size_;
+                d.start_ = d.finish_ = iterator();
+                d.map_ = nullptr;
+                d.map_size_ = 0;
+            }
+            return *this;
+        }
+
+        // emplace_back 接口
+        template <typename... Args>
+        void emplace_back(Args &&...args)
+        {
+            insert(end(), T(std::forward<Args>(args)...));
+        }
+
         // 返回 deque 的前端元素
         T &front()
         {
@@ -269,6 +302,48 @@ namespace zstl
             return *(tmp - 1);
         }
 
+        // 在 pos 位置插入右值元素
+        iterator insert(iterator pos, T &&val)
+        {
+            assert(pos >= begin() && pos <= end());
+            size_t index = pos - start_;
+            size_t size = this->size();
+            bool ret = check_map_size();
+            iterator iter;
+
+            // 往前移动
+            if (index < size / 2)
+            {
+                if (ret == true)
+                {
+                    *(start_.node_ - 1) = new T[BufferSize];
+                }
+                iter = start_ - 1;
+                while (iter + 1 != pos)
+                {
+                    *iter = std::move(*(iter + 1));
+                    ++iter;
+                }
+                --start_;
+            }
+            // 往后移动
+            else
+            {
+                if (ret == true)
+                {
+                    *(finish_.node_ + 1) = new T[BufferSize];
+                }
+                iter = finish_;
+                while (iter != pos)
+                {
+                    *iter = std::move(*(iter - 1));
+                    --iter;
+                }
+                ++finish_;
+            }
+            *iter = std::move(val);
+            return iter;
+        }
         // 在 pos 位置插入元素
         iterator insert(iterator pos, const T &val)
         {

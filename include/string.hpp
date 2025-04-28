@@ -41,6 +41,35 @@ namespace zstl
             swap(tmp); // 交换资源后tmp自动析构旧数据
             return *this;
         }
+        // 移动构造函数
+        string(string &&s)
+            : str_(s.str_), size_(s.size_), capacity_(s.capacity_)
+        {
+            s.str_ = nullptr;
+            s.size_ = s.capacity_ = 0;
+        }
+
+        // 新增接收 const char* 类型参数的赋值运算符
+        string &operator=(const char *s)
+        {
+            clear();
+            insert(0,s);
+            return *this;
+        }
+        // 移动赋值运算符
+        string &operator=(string &&s)
+        {
+            if (this != &s)
+            {
+                delete[] str_;
+                str_ = s.str_;
+                size_ = s.size_;
+                capacity_ = s.capacity_;
+                s.str_ = nullptr;
+                s.size_ = s.capacity_ = 0;
+            }
+            return *this;
+        }
 
         // 获取C风格字符串（保证以'\0'结尾）
         const char *c_str() const { return str_; }
@@ -182,7 +211,7 @@ namespace zstl
                 reserve(size_ + len);
 
             // 移动原有元素
-            for (size_t i = size_; i >= pos; --i)
+            for (int i = size_; i >= (int)pos; --i)
                 str_[i + len] = str_[i];
             memcpy(str_ + pos, s, len);
             size_ += len;
@@ -262,7 +291,7 @@ namespace zstl
         char buf[128]; // 局部缓冲区
         int i = 0;
         int ch = in.get(); // 用 int 保存返回值
-    
+
         // 读取直到空格、换行或遇到 EOF（-1）
         while (in.good() && ch != EOF && ch != ' ' && ch != '\n')
         {

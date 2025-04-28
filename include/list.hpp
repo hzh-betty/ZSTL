@@ -13,7 +13,11 @@ namespace zstl
             : data_(val), prev_(nullptr), next_(nullptr)
         {
         }
-
+        // 右值引用构造函数
+        ListNode(T &&val)
+            : data_(std::move(val)), prev_(nullptr), next_(nullptr)
+        {
+        }
         T data_;            // 节点存储的数据
         ListNode<T> *prev_; // 指向前一个节点的指针
         ListNode<T> *next_; // 指向后一个节点的指针
@@ -162,9 +166,54 @@ namespace zstl
             swap(it);
             return *this;
         }
+        // 移动构造函数
+        list(list &&other)
+            : head_(other.head_), size_(other.size_)
+        {
+            other.head_ = nullptr;
+            other.size_ = 0;
+        }
 
+        // 移动赋值运算符
+        list<T> &operator=(list<T> &&other)
+        {
+            if (this != &other)
+            {
+                clear();
+                delete head_;
+                head_ = other.head_;
+                size_ = other.size_;
+                other.head_ = nullptr;
+                other.size_ = 0;
+            }
+            return *this;
+        }
+
+        // emplace_back 接口
+        template <typename... Args>
+        void emplace_back(Args &&...args)
+        {
+            insert(end(), T(std::forward<Args>(args)...));
+        }
+        // 在迭代器 it 之前插入右值元素 val，并返回新节点的迭代器
+        iterator insert(iterator it, T &&val)
+        {
+            // 1. 构造新节点，使用 std::move 将右值传递给节点构造函数
+            Node *cur = it.node_;
+            Node *prev_node = cur->prev_;
+            Node *new_node = new Node(std::move(val));
+
+            // 2. 链接各节点：将新节点插入到 prev_node 和 cur 之间
+            prev_node->next_ = new_node;
+            cur->prev_ = new_node;
+            new_node->prev_ = prev_node;
+            new_node->next_ = cur;
+            ++size_;
+
+            return new_node;
+        }
         // 在迭代器 it 之前插入值为 val 的新节点，并返回新节点的迭代器
-        iterator insert(iterator it, T val)
+        iterator insert(iterator it, const T &val)
         {
             // 1. 构造新节点
             Node *cur = it.node_;

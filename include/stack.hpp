@@ -7,9 +7,33 @@ namespace zstl
     class stack
     {
     public:
+        stack() = default;
+        ~stack() = default;
+        // 移动构造函数
+        stack(stack &&other) 
+            : con_(std::move(other.con_))
+        {
+        }
+
+        // 移动赋值运算符
+        stack &operator=(stack &&other) 
+        {
+            if (this != &other)
+            {
+                con_ = std::move(other.con_);
+            }
+            return *this;
+        }
+
+        // emplace 接口
+        template <typename... Args>
+        void emplace(Args &&...args)
+        {
+            con_.emplace_back(std::forward<Args>(args)...);
+        }
 
         // 向栈顶插入元素
-        void push(const T&x)
+        void push(const T &x)
         {
             con_.push_back(x);
         }
@@ -21,18 +45,18 @@ namespace zstl
         }
 
         // 获取栈顶元素
-        T&top()
+        T &top()
         {
             return con_.back();
         }
 
-        const T&top()const
+        const T &top() const
         {
             return con_.back();
         }
 
         // 判断是否为空
-        bool empty()const
+        bool empty() const
         {
             return con_.empty();
         }
@@ -42,6 +66,7 @@ namespace zstl
         {
             return con_.size();
         }
+
     private:
         Container con_;
     };
