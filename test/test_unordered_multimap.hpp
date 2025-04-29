@@ -38,15 +38,6 @@ namespace zstl
         EXPECT_EQ(m.count(2), 1u);
     }
 
-    // 3. emplace 原位构造并返回迭代器
-    TEST_F(UnorderedMultimapTest, EmplaceInsertsElement)
-    {
-        unordered_multimap<string, double> m;
-        auto p = m.emplace("pi", 3.14); // emplace 返回 pair<iterator,bool>
-        EXPECT_EQ(p->first, "pi");
-        EXPECT_DOUBLE_EQ(p->second, 3.14);
-        EXPECT_EQ(m.count("pi"), 1u);
-    }
 
     // 4. insert_duplicate（insert）允许重复键
     TEST_F(UnorderedMultimapTest, InsertAllowsDuplicates)
@@ -146,4 +137,13 @@ namespace zstl
         EXPECT_TRUE(src2.empty());
     }
 
+    // 12. emplace 原位构造并返回迭代器
+    TEST_F(UnorderedMultimapTest, EmplaceInsertsElement)
+    {
+        unordered_multimap<string, double> m;
+        auto p = m.emplace("pi", 3.14); // emplace 返回 iterator
+        EXPECT_EQ(p->first, "pi");
+        EXPECT_DOUBLE_EQ(p->second, 3.14);
+        EXPECT_EQ(m.count("pi"), 1u);
+    }
 };

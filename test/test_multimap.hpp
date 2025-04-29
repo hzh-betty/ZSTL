@@ -172,4 +172,13 @@ namespace zstl
         EXPECT_EQ(it->first, 3);
         EXPECT_EQ(it->second, 30);
     }
+
+    TEST(MultimapTest, Emplace)
+    {
+        multimap<int, int> mm;
+        auto it = mm.emplace(1, 100);
+        EXPECT_EQ(it->first, 1);
+        EXPECT_EQ(it->second, 100);
+        EXPECT_EQ(mm.count(1), 1u);
+    }
 }; // namespace zstl

@@ -154,4 +154,15 @@ namespace zstl
         EXPECT_EQ(m[2], 20);
         EXPECT_EQ(m[3], 30);
     }
+
+    TEST_F(UnorderedMapTest, EmplaceUnique)
+    {
+        unordered_map<int, int> um;
+        auto result = um.emplace(5, 100);
+        EXPECT_TRUE(result.second);
+        EXPECT_EQ(result.first->first, 5);
+        EXPECT_EQ(result.first->second, 100);
+        auto it = um.find(5);
+        EXPECT_EQ(it, result.first);
+    }
 };

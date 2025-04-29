@@ -225,4 +225,12 @@ namespace zstl
         EXPECT_EQ(ms.count(2), 1);
         EXPECT_EQ(ms.count(3), 1);
     }
+
+    TEST(MultisetTest, Emplace)
+    {
+        multiset<int> ms;
+        auto it = ms.emplace(42);
+        EXPECT_EQ(*it, 42);
+        EXPECT_EQ(ms.count(42), 1u);
+    }
 };

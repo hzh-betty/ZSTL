@@ -12,22 +12,20 @@ namespace zstl
     template <typename T>
     struct RBNode
     {
-        RBNode(const T &data = T(), Color col = Color::RED)
-            : left_(nullptr), right_(nullptr), parent_(nullptr),
-              data_(data), col_(col) // 默认为红节点
+        RBNode(const T &data, Color col = Color::RED)
+            : data_(data), col_(col) // 默认为红节点
         {
         }
 
-        RBNode(const T &&data, Color col = Color::RED)
-            : left_(nullptr), right_(nullptr), parent_(nullptr),
-              data_(std::move(data)), col_(col) // 默认为红节点
+        RBNode(T &&data, Color col = Color::RED)
+            : data_(std::move(data)), col_(col) // 默认为红节点
         {
         }
-        RBNode<T> *left_;   // 左子树
-        RBNode<T> *right_;  // 右子树
-        RBNode<T> *parent_; // 父节点
-        T data_;            // 键值
-        Color col_;         // 颜色
+        RBNode<T> *left_ = nullptr;   // 左子树
+        RBNode<T> *right_ = nullptr;  // 右子树
+        RBNode<T> *parent_ = nullptr; // 父节点
+        T data_;                      // 键值
+        Color col_;                   // 颜色
     };
 
     template <typename T, typename Ref, typename Ptr>
@@ -1004,7 +1002,7 @@ namespace zstl
         // 初始化头节点
         void init_header()
         {
-            header_ = new Node();
+            header_ = new Node(T());
             header_->col_ = Color::RED;
             header_->left_ = header_;
             header_->right_ = header_;

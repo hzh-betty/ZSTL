@@ -1,5 +1,5 @@
 test:test.cc
-	g++ -o test test.cc -std=c++11 -lgtest -lpthread
+	g++ -o test test.cc -std=c++17 -lgtest -lpthread
 .PHONETY:clean
 clean:
 	rm -f test

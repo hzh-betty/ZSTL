@@ -168,4 +168,12 @@ namespace zstl
         EXPECT_EQ(pq1.size(), 0);
     }
 
+    TEST(PriorityQueueTest, Emplace)
+    {
+        priority_queue<int> pq;
+        pq.emplace(42);
+        EXPECT_EQ(pq.top(), 42);
+        pq.pop();
+        EXPECT_TRUE(pq.empty());
+    }
 }

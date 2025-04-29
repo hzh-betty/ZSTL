@@ -272,4 +272,13 @@ namespace zstl
         ++it;
         EXPECT_EQ(*it, 3);
     }
+
+    TEST(SetTest, EmplaceUnique)
+    {
+        set<int> s;
+        auto result = s.emplace(42);
+        EXPECT_TRUE(result.second);
+        EXPECT_EQ(*result.first, 42);
+        EXPECT_EQ(s.find(42), result.first);
+    }
 }; // namespace zstl

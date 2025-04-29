@@ -129,4 +129,13 @@ namespace zstl
         EXPECT_EQ(q1.size(), 0);
     }
 
+    TEST_F(QueueTest, Emplace)
+    {
+        queue<int> q;
+        q.emplace(42);
+        EXPECT_EQ(q.front(), 42);
+        q.pop();
+        EXPECT_TRUE(q.empty());
+    }
+
 }

@@ -205,4 +205,12 @@ namespace zstl
         EXPECT_EQ(ms.count(2), 1);
         EXPECT_EQ(ms.count(3), 1);
     }
+
+    TEST(UnorderedMultisetTest, Emplace)
+    {
+        unordered_multiset<int> ums;
+        auto it = ums.emplace(42);
+        EXPECT_EQ(*it, 42);
+        EXPECT_EQ(ums.count(42), 1u);
+    }
 }; // namespace zstl

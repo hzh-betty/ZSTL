@@ -286,4 +286,12 @@ namespace zstl
         ++it;
         EXPECT_EQ(*it, 3);
     }
+
+    TEST(ListTest, EmplaceBack)
+    {
+        list<int> l;
+        l.emplace_back(42);
+        EXPECT_EQ(l.back(), 42);
+        EXPECT_EQ(l.size(), 1);
+    }
 };

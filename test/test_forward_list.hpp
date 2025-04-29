@@ -149,7 +149,6 @@ namespace zstl
         }
         EXPECT_EQ(idx, 3);
         EXPECT_TRUE(lst1.begin() == lst1.end());
-
     }
 
     // 测试 initializer_list 构造
@@ -163,5 +162,16 @@ namespace zstl
             EXPECT_EQ(*it, expected[idx++]);
         }
         EXPECT_EQ(idx, 3);
+    }
+    
+    // 测试 emplace_after
+    TEST(ForwardListTest, EmplaceAfter)
+    {
+        forward_list<int> fl;
+        fl.push_front(1);
+        auto it = fl.begin();
+        fl.emplace_after(it, 2);
+        ++it;
+        EXPECT_EQ(*it, 2);
     }
 };

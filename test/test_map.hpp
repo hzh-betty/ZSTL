@@ -1,6 +1,6 @@
 #pragma once
-#include "../include/map.hpp"
 #include "../include/string.hpp"
+#include "../include/map.hpp"
 #include <gtest/gtest.h>
 namespace zstl
 {
@@ -8,6 +8,14 @@ namespace zstl
     class MapTest : public ::testing::Test
     {
     protected:
+        void SetUp() override
+        {
+        }
+        // 在每个测试用例之后执行
+        void TearDown() override
+        {
+            // 清理工作（如果需要）
+        }
         map<int, string> m;
     };
 
@@ -164,5 +172,16 @@ namespace zstl
         EXPECT_EQ(m[1], "one");
         EXPECT_EQ(m[2], "two");
         EXPECT_EQ(m[3], "three");
+    }
+
+    TEST_F(MapTest, EmplaceUnique)
+    {
+        map<int, int> m;
+        auto result = m.emplace(5, 100);
+        EXPECT_TRUE(result.second);
+        EXPECT_EQ(result.first->first, 5);
+        EXPECT_EQ(result.first->second, 100);
+        auto it = m.find(5);
+        EXPECT_EQ(it, result.first);
     }
 };

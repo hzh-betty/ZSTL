@@ -224,4 +224,12 @@ namespace zstl
         EXPECT_EQ(vec[1], 2);
         EXPECT_EQ(vec[2], 3);
     }
+
+    TEST(VectorTest, EmplaceBack)
+    {
+        vector<int> v;
+        v.emplace_back(42);
+        EXPECT_EQ(v.back(), 42);
+        EXPECT_EQ(v.size(), 1);
+    }
 };

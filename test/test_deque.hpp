@@ -222,4 +222,12 @@ namespace zstl
         EXPECT_EQ(d[2], 3);
     }
 
+    // 测试 emplace_back
+    TEST_F(DequeTest, EmplaceBack)
+    {
+        deque<int> d;
+        d.emplace_back(42);
+        EXPECT_EQ(d.back(), 42);
+        EXPECT_EQ(d.size(), 1);
+    }
 };

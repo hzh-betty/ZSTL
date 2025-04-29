@@ -131,4 +131,13 @@ namespace zstl
         EXPECT_TRUE(s1.empty());
     }
 
+    TEST(StackTest, Emplace)
+    {
+        stack<int> s;
+        s.emplace(42);
+        EXPECT_EQ(s.top(), 42);
+        s.pop();
+        EXPECT_TRUE(s.empty());
+    }
+
 };

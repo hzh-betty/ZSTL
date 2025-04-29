@@ -223,4 +223,13 @@ namespace zstl
         EXPECT_EQ(us.count(2), 1);
         EXPECT_EQ(us.count(3), 1);
     }
+
+    TEST_F(UnorderedSetTest, EmplaceUnique)
+    {
+        unordered_set<int> us;
+        auto result = us.emplace(42);
+        EXPECT_TRUE(result.second);
+        EXPECT_EQ(*result.first, 42);
+        EXPECT_EQ(us.find(42), result.first);
+    }
 };
