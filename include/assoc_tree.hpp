@@ -141,7 +141,6 @@ namespace zstl
          */
         template <typename... Args>
         auto emplace(Args &&...args)
-            -> std::conditional_t<Unique, std::pair<iterator, bool>, iterator>
         {
             if constexpr (Unique)
             {
@@ -155,7 +154,6 @@ namespace zstl
 
         // 传统插入方法
         auto insert(const value_type &v)
-            -> std::conditional_t<Unique, std::pair<iterator, bool>, iterator>
         {
             if constexpr (Unique)
             {
@@ -167,11 +165,10 @@ namespace zstl
             }
         }
 
-        //只在 value_type 可由 P&& 构造时才参与重载，等价于 emplace 的完美转发
+        // 只在 value_type 可由 P&& 构造时才参与重载，等价于 emplace 的完美转发
         template <typename P,
                   typename = std::enable_if_t<std::is_constructible_v<value_type, P &&>>>
         auto insert(P &&x)
-            -> std::conditional_t<Unique, std::pair<iterator, bool>, iterator>
         {
             if constexpr (Unique)
             {
@@ -182,7 +179,7 @@ namespace zstl
                 return tree_.emplace_duplicate(std::forward<P>(x));
             }
         }
-        
+
         /**
          * @brief 下标访问运算符（仅适用于map且键唯一的情况）
          * @param key 要访问的键

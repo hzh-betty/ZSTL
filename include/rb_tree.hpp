@@ -1,14 +1,17 @@
 #pragma once
 #include <utility>
 #include <iostream>
+#include <type_traits>
 namespace zstl
 {
+    // 红黑树的颜色
     enum class Color
     {
         RED,  // 红色
         BLACK // 黑色
     };
 
+    // 红黑树的节点
     template <typename T>
     struct RBNode
     {
@@ -28,6 +31,7 @@ namespace zstl
         Color col_;                   // 颜色
     };
 
+    // 红黑树的迭代器
     template <typename T, typename Ref, typename Ptr>
     struct RBTreeIterator
     {
@@ -155,455 +159,18 @@ namespace zstl
         Node *node_; // 节点
     };
 
-    template <typename K, typename T, typename Compare>
-    class RBTree
+    // 红黑树的平衡操作
+    template <typename T>
+    class RBBalance
     {
         using Node = RBNode<T>;
 
     public:
-        // 迭代器
-        using iterator = RBTreeIterator<T, T &, T *>;
-        using const_iterator = RBTreeIterator<T, const T &, const T *>;
-
-        iterator begin()
+        explicit RBBalance(Node *header) : header_(header)
         {
-            return header_->left_;
-        }
-        const_iterator begin() const
-        {
-            return header_->left_;
         }
 
-        iterator end()
-        {
-            return header_;
-        }
-        const_iterator end() const
-        {
-            return header_;
-        }
-
-    public:
-        RBTree()
-        {
-            // 初始化header__节点
-            init_header();
-        }
-
-        // 拷贝构造
-        RBTree(const RBTree &t)
-        {
-            // 拷贝构造时重建header结构
-            init_header();
-            header_->parent_ = copy(t.header_->parent_);
-            adjust_header_pointers(header_->parent_);
-            size_ = t.size_;
-        }
-
-        // 赋值重载
-        RBTree &operator=(const RBTree &t)
-        {
-            if (this != &t)
-            {
-                RBTree tmp(t);
-                clear();
-                swap(tmp);
-            }
-            return *this;
-        }
-        // lower_bound：第一个 ≥ k
-        iterator lower_bound(const K &k)
-        {
-            Compare com;
-            // 根节点
-            Node *cur = header_->parent_;
-            // 候选，初始为 header_（即 end()）
-            Node *res = header_;
-            while (cur)
-            {
-                if (com(cur->data_, k))
-                {
-                    // cur->data_ < k: 下界不可能在左子树
-                    cur = cur->right_;
-                }
-                else
-                {
-                    // cur->data_ >= k: 记录候选，继续往左找更小的 ≥ k
-                    res = cur;
-                    cur = cur->left_;
-                }
-            }
-            return iterator(res);
-        }
-
-        const_iterator lower_bound(const K &k) const
-        {
-            Compare com;
-            Node *cur = header_->parent_;
-            Node *res = header_;
-            while (cur)
-            {
-                if (com(cur->data_, k))
-                {
-                    cur = cur->right_;
-                }
-                else
-                {
-                    res = cur;
-                    cur = cur->left_;
-                }
-            }
-            return const_iterator(res);
-        }
-
-        // upper_bound：第一个 > k
-        iterator upper_bound(const K &k)
-        {
-            Compare com;
-            Node *cur = header_->parent_;
-            Node *res = header_;
-            while (cur)
-            {
-                if (com(k, cur->data_))
-                {
-                    // k < cur->data_: cur 是一个 > k 的候选
-                    res = cur;
-                    cur = cur->left_;
-                }
-                else
-                {
-                    // cur->data_ ≤ k: 跳过左侧
-                    cur = cur->right_;
-                }
-            }
-            return iterator(res);
-        }
-
-        const_iterator upper_bound(const K &k) const
-        {
-            Compare com;
-            Node *cur = header_->parent_;
-            Node *res = header_;
-            while (cur)
-            {
-                if (com(k, cur->data_))
-                {
-                    res = cur;
-                    cur = cur->left_;
-                }
-                else
-                {
-                    cur = cur->right_;
-                }
-            }
-            return const_iterator(res);
-        }
-
-        // 移动构造函数
-        RBTree(RBTree &&other) noexcept
-            : header_(other.header_), size_(other.size_)
-        {
-            other.header_ = nullptr;
-            other.size_ = 0;
-        }
-
-        // 移动赋值运算符
-        RBTree &operator=(RBTree &&other) noexcept
-        {
-            if (this != &other)
-            {
-                clear();
-                delete header_;
-                header_ = other.header_;
-                size_ = other.size_;
-                other.header_ = nullptr;
-                other.size_ = 0;
-            }
-            return *this;
-        }
-
-        // emplace 接口（不支持重复插入）
-        template <typename... Args>
-        std::pair<iterator, bool> emplace_unique(Args &&...args)
-        {
-            Node *parent = header_;
-            Node *cur = header_->parent_; // 根节点
-            Compare com;
-            T data(std::forward<Args>(args)...);
-
-            // 1. 定位插入点 —— 重复时也走右支
-            while (cur)
-            {
-                parent = cur;
-                if (com(data, cur->data_)) // data < cur->data_
-                    cur = cur->left_;
-                else if (com(cur->data_, data)) // data > cur->data_
-                    cur = cur->right_;
-                else
-                {
-                    return {iterator(cur), false};
-                }
-            }
-
-            // 2. 创建并挂接节点
-            Node *newnode = new Node(std::move(data));
-            newnode->parent_ = parent;
-            size_++;
-            link_node(newnode, parent, data);
-
-            // 3. 红黑树重平衡
-            adjust_insert(newnode, parent);
-            header_->parent_->col_ = Color::BLACK; // 保证根为黑
-
-            return {iterator(newnode), true};
-        }
-
-        // emplace 接口（支持重复插入）
-        template <typename... Args>
-        iterator emplace_duplicate(Args &&...args)
-        {
-            Node *parent = header_;
-            Node *cur = header_->parent_; // 根节点
-            Compare com;
-            T data(std::forward<Args>(args)...);
-
-            // 1. 定位插入点 —— 重复时也走右支
-            while (cur)
-            {
-                parent = cur;
-                if (com(data, cur->data_)) // data < cur->data_
-                    cur = cur->left_;
-                else // data >= cur->data_
-                    cur = cur->right_;
-            }
-
-            // 2. 创建并挂接节点
-            Node *newnode = new Node(std::move(data));
-            newnode->parent_ = parent;
-            size_++;
-            link_node(newnode, parent, data);
-
-            // 3. 红黑树重平衡
-            adjust_insert(newnode, parent);
-            header_->parent_->col_ = Color::BLACK; // 保证根为黑
-
-            return iterator(newnode);
-        }
-
-        // 插入节点--不支持重复插入
-        std::pair<iterator, bool> insert_unique(const T &data)
-        {
-            Node *parent = header_;
-            Node *cur = header_->parent_; // 根节点
-            Compare com;
-
-            // 1. 定位插入点 —— 重复时也走右支
-            while (cur)
-            {
-                parent = cur;
-                if (com(data, cur->data_)) // data < cur->data_
-                    cur = cur->left_;
-                else if (com(cur->data_, data)) // data > cur->data_
-                    cur = cur->right_;
-                else
-                {
-                    return {iterator(cur), false};
-                }
-            }
-
-            // 2. 创建并挂接节点
-            Node *newnode = new Node(data);
-            newnode->parent_ = parent;
-            size_++;
-            link_node(newnode, parent, data);
-
-            // 3. 红黑树重平衡
-            adjust_insert(newnode, parent);
-            header_->parent_->col_ = Color::BLACK; // 保证根为黑
-
-            return {iterator(newnode), true};
-        }
-
-        // 插入节点--支持重复插入
-        iterator insert_duplicate(const T &data)
-        {
-            Node *parent = header_;
-            Node *cur = header_->parent_; // 根节点
-            Compare com;
-
-            // 1. 定位插入点 —— 重复时也走右支
-            while (cur)
-            {
-                parent = cur;
-                if (com(data, cur->data_)) // data < cur->data_
-                    cur = cur->left_;
-                else // data >= cur->data_
-                    cur = cur->right_;
-            }
-
-            // 2. 创建并挂接节点
-            Node *newnode = new Node(data);
-            newnode->parent_ = parent;
-            size_++;
-            link_node(newnode, parent, data);
-
-            // 3. 红黑树重平衡
-            adjust_insert(newnode, parent);
-            header_->parent_->col_ = Color::BLACK; // 保证根为黑
-
-            return iterator(newnode);
-        }
-
-        // 查找
-        iterator find(const K &val) const
-        {
-            Compare com;
-            Node *cur = header_->parent_;
-            while (cur)
-            {
-                if (com(val, cur->data_))
-                {
-                    // 左子树中查找
-                    cur = cur->left_;
-                }
-                else if (com(cur->data_, val))
-                {
-                    // 右子树中查找
-                    cur = cur->right_;
-                }
-                else
-                {
-                    // 找到了
-                    return iterator(cur);
-                }
-            }
-            return iterator(header_);
-        }
-
-        // 删除接口
-        iterator erase(const_iterator pos)
-        {
-            Compare com;
-            iterator next = pos.node_;
-            ++next;
-            // 1. 计算中序后继，作为返回值
-            Node *target = pos.node_; // 待删除节点
-            Node *successor = next.node_;
-
-            // 2. 定位待真正删除的节点 del and its parent delP
-            Node *del = nullptr, *delP = nullptr;
-            if (!target->left_ || !target->right_)
-            {
-                // 度0或1：直接删除 target
-                del = target;
-                delP = target->parent_;
-            }
-            else
-            {
-                // 情况 B/双子：交换数据后，将后继节点（必为半叶）设为删除对象
-                copy_delete_node(target->data_, successor->data_);
-                del = successor;
-                delP = successor->parent_;
-                next = iterator(pos.node_);
-            }
-
-            // 3. 红黑树删除调整
-            Node *del_node = del;
-            Node *del_node_parent = delP;
-            adjust_erase(del, delP);                // 恢复红黑性质
-            delete_node(del_node, del_node_parent); // 实际摘除节点并释放
-
-            // 4. 更新 header 的最小/最大指针（若有）
-            adjust_header_pointers(header_->parent_);
-
-            // 5. 返回先前保存的后继
-            return next;
-        }
-        iterator erase(const_iterator first, const_iterator last)
-        {
-            // 如果删除整个树，直接 clear
-            if (first == begin() && last == end())
-            {
-                clear();
-                return end();
-            }
-
-            // 否则逐节点删除，因为删除存在替换删除逻辑
-            // 如果last被替换，可能
-            const_iterator ret = last.node_;
-            while (first != last)
-            {
-                const_iterator cur = first++;
-                ret = erase(cur);
-                if (ret != first && first != last)
-                {
-                    first = ret;
-                }
-            }
-            return iterator(ret.node_); // 返回下一个有效迭代器
-        }
-
-        size_t erase(const K &key)
-        {
-            const_iterator iter = find(key);
-            if (iter == end())
-                return 0;
-            erase(iter);
-            return 1;
-        }
-
-        // 获取有效数据个数
-        size_t size() const
-        {
-            return size_;
-        }
-
-        // 判断是否为空
-        bool empty() const
-        {
-            return size_ == 0;
-        }
-
-        void swap(RBTree &rb_tree)
-        {
-            std::swap(header_, rb_tree.header_);
-            std::swap(size_, rb_tree.size_);
-        }
-        // 清空节点
-        void clear()
-        {
-            destroy(header_->parent_);
-            header_->parent_ = nullptr;
-            header_->left_ = header_;
-            header_->right_ = header_;
-            size_ = 0;
-        }
-
-        ~RBTree()
-        {
-            if (header_)
-            {
-                clear();
-                delete header_;
-            }
-        }
-
-    private:
-        template <typename L, typename R>
-        void copy_delete_node(std::pair<const L, R> &a, std::pair<const L, R> &b)
-        {
-            // 赋值 const key —— const_cast 是常见 hack
-            const_cast<L &>(a.first) = b.first;
-            // 赋值 mapped value
-            a.second = b.second;
-        }
-
-        template <typename L>
-        void copy_delete_node(L &a, L &b)
-        {
-            const_cast<L &>(a) = b;
-        }
-
+    protected:
         // 右旋
         void RotateR(Node *parent)
         {
@@ -680,32 +247,6 @@ namespace zstl
         {
             RotateR(parent->right_);
             RotateL(parent);
-        }
-
-        // 插入链接节点
-        void link_node(Node *newnode, Node *parent, const T &data)
-        {
-            Compare com;
-            if (parent == header_)
-            {
-                // 树原为空，新节点即根
-                header_->parent_ = newnode;
-                header_->left_ = header_->right_ = newnode;
-            }
-            else if (com(data, parent->data_))
-            {
-                parent->left_ = newnode;
-                // 更新最小值指针
-                if (header_->left_ == parent)
-                    header_->left_ = newnode;
-            }
-            else
-            {
-                parent->right_ = newnode;
-                // 更新最大值指针
-                if (header_->right_ == parent)
-                    header_->right_ = newnode;
-            }
         }
 
         // 插入调整
@@ -902,18 +443,104 @@ namespace zstl
             }
         }
 
+    protected:
+        Node *header_;
+    };
+
+    // 红黑树的基础操作
+    template <typename T, typename Compare>
+    class RBTreeBase : public RBBalance<T>
+    {
+        using Node = RBNode<T>;
+        using iterator = RBTreeIterator<T, T &, T *>;
+        using Balance = RBBalance<T>;
+
+    public:
+        explicit RBTreeBase(Node *header) : Balance(header)
+        {
+        }
+
+    protected:
+        template <bool Unique, typename... Args>
+        auto insert_impl(Args &&...args)
+        {
+            Node *parent = this->header_;
+            Node *cur = this->header_->parent_;
+            Compare com;
+            T data(std::forward<Args>(args)...);
+
+            // 定位插入点（重复时统一走右支）
+            while (cur)
+            {
+                parent = cur;
+                if (com(data, cur->data_))
+                    cur = cur->left_;
+                else
+                {
+                    if constexpr (Unique) // —— 编译期分支
+                    {
+                        // 运行时判断是否重复
+                        if (!com(cur->data_, data))
+                            return std::pair<iterator, bool>{iterator(cur), false};
+                    }
+                    // 对于 Unique==false 或者 未重复，都走右支
+                    cur = cur->right_;
+                }
+            }
+
+            // 创建并挂接
+            Node *newnode = new Node(std::move(data));
+            newnode->parent_ = parent;
+            this->link_node(newnode, parent, data);
+
+            // 平衡调整
+            this->adjust_insert(newnode, parent);
+            this->header_->parent_->col_ = Color::BLACK;
+
+            if constexpr (Unique)
+                return std::pair<iterator, bool>{iterator(newnode), true};
+            else
+                return iterator(newnode);
+        }
+
+        // 插入链接节点
+        void link_node(Node *newnode, Node *parent, const T &data)
+        {
+            Compare com;
+            if (parent == this->header_)
+            {
+                // 树原为空，新节点即根
+                this->header_->parent_ = newnode;
+                this->header_->left_ = this->header_->right_ = newnode;
+            }
+            else if (com(data, parent->data_))
+            {
+                parent->left_ = newnode;
+                // 更新最小值指针
+                if (this->header_->left_ == parent)
+                    this->header_->left_ = newnode;
+            }
+            else
+            {
+                parent->right_ = newnode;
+                // 更新最大值指针
+                if (this->header_->right_ == parent)
+                    this->header_->right_ = newnode;
+            }
+        }
+
         // 删除节点
         void delete_node(Node *del, Node *delP)
         {
             // 根节点被删：直接将唯一子节点提到根
-            if (delP == header_)
+            if (delP == this->header_)
             {
                 // 调整红黑树
                 Node *child = del->left_ ? del->left_ : del->right_;
-                header_->parent_ = child;
+                this->header_->parent_ = child;
                 if (child != nullptr)
                 {
-                    child->parent_ = header_;
+                    child->parent_ = this->header_;
                     child->col_ = Color::BLACK;
                 }
             }
@@ -949,9 +576,367 @@ namespace zstl
                 }
             }
             delete del; // 实际删除结点
-            --size_;
         }
 
+        // 复制节点
+        template <typename L, typename R>
+        void copy_delete_node(std::pair<const L, R> &a, std::pair<const L, R> &b)
+        {
+            // 赋值 const key —— const_cast 是常见 hack
+            const_cast<L &>(a.first) = b.first;
+            // 赋值 mapped value
+            a.second = b.second;
+        }
+
+        template <typename L>
+        void copy_delete_node(L &a, L &b)
+        {
+            const_cast<L &>(a) = b;
+        }
+    };
+
+    // 红黑树
+    template <typename K, typename T, typename Compare>
+    class RBTree : public RBTreeBase<T, Compare>
+    {
+        using Node = RBNode<T>;
+        using Base = RBTreeBase<T, Compare>;
+
+    public:
+        // 迭代器
+        using iterator = RBTreeIterator<T, T &, T *>;
+        using const_iterator = RBTreeIterator<T, const T &, const T *>;
+
+        iterator begin()
+        {
+            return this->header_->left_;
+        }
+        const_iterator begin() const
+        {
+            return this->header_->left_;
+        }
+
+        iterator end()
+        {
+            return this->header_;
+        }
+        const_iterator end() const
+        {
+            return this->header_;
+        }
+
+    public:
+        // 构造函数
+        RBTree()
+            : Base(nullptr)
+        {
+            // 初始化header__节点
+            init_header();
+        }
+
+        // 拷贝构造
+        RBTree(const RBTree &t)
+            : Base(nullptr)
+        {
+            // 拷贝构造时重建header结构
+            init_header();
+            this->header_->parent_ = copy(t.header_->parent_);
+            adjust_header_pointers(this->header_->parent_);
+            size_ = t.size_;
+        }
+
+        // 赋值重载
+        RBTree &operator=(const RBTree &t)
+        {
+            if (this != &t)
+            {
+                RBTree tmp(t);
+                clear();
+                swap(tmp);
+            }
+            return *this;
+        }
+
+        // 移动构造函数
+        RBTree(RBTree &&other)
+            : Base(other.header_),
+              size_(other.size_)
+        {
+            other.header_ = nullptr;
+            other.size_ = 0;
+        }
+
+        // 移动赋值运算符
+        RBTree &operator=(RBTree &&other) noexcept
+        {
+            if (this != &other)
+            {
+                clear();
+                delete this->header_;
+                this->header_ = other.header_;
+                size_ = other.size_;
+                other.header_ = nullptr;
+                other.size_ = 0;
+            }
+            return *this;
+        }
+
+        // lower_bound：第一个 ≥ k
+        iterator lower_bound(const K &k)
+        {
+            Compare com;
+            // 根节点
+            Node *cur = this->header_->parent_;
+            // 候选，初始为 header_（即 end()）
+            Node *res = this->header_;
+            while (cur)
+            {
+                if (com(cur->data_, k))
+                {
+                    // cur->data_ < k: 下界不可能在左子树
+                    cur = cur->right_;
+                }
+                else
+                {
+                    // cur->data_ >= k: 记录候选，继续往左找更小的 ≥ k
+                    res = cur;
+                    cur = cur->left_;
+                }
+            }
+            return iterator(res);
+        }
+
+        const_iterator lower_bound(const K &k) const
+        {
+            Compare com;
+            Node *cur = this->header_->parent_;
+            Node *res = this->header_;
+            while (cur)
+            {
+                if (com(cur->data_, k))
+                {
+                    cur = cur->right_;
+                }
+                else
+                {
+                    res = cur;
+                    cur = cur->left_;
+                }
+            }
+            return const_iterator(res);
+        }
+
+        // upper_bound：第一个 > k
+        iterator upper_bound(const K &k)
+        {
+            Compare com;
+            Node *cur = this->header_->parent_;
+            Node *res = this->header_;
+            while (cur)
+            {
+                if (com(k, cur->data_))
+                {
+                    // k < cur->data_: cur 是一个 > k 的候选
+                    res = cur;
+                    cur = cur->left_;
+                }
+                else
+                {
+                    // cur->data_ ≤ k: 跳过左侧
+                    cur = cur->right_;
+                }
+            }
+            return iterator(res);
+        }
+
+        const_iterator upper_bound(const K &k) const
+        {
+            Compare com;
+            Node *cur = this->header_->parent_;
+            Node *res = this->header_;
+            while (cur)
+            {
+                if (com(k, cur->data_))
+                {
+                    res = cur;
+                    cur = cur->left_;
+                }
+                else
+                {
+                    cur = cur->right_;
+                }
+            }
+            return const_iterator(res);
+        }
+
+        // emplace 接口（不支持重复插入）
+        template <typename... Args>
+        std::pair<iterator, bool> emplace_unique(Args &&...args)
+        {
+            auto p = this->template insert_impl<true>(std::forward<Args>(args)...);
+            if(p.second == true)
+            {
+                ++size_;
+            }
+            return p;
+        }
+
+        // emplace 接口（支持重复插入）
+        template <typename... Args>
+        iterator emplace_duplicate(Args &&...args)
+        {
+            ++size_;
+            return this->template insert_impl<false>(std::forward<Args>(args)...);
+        }
+
+        // 插入节点--不支持重复插入
+        std::pair<iterator, bool> insert_unique(const T &data)
+        {
+            return this->emplace_unique(data);
+        }
+
+        // 插入节点--支持重复插入
+        iterator insert_duplicate(const T &data)
+        {
+            return this->emplace_duplicate(data);
+        }
+
+        // 查找
+        iterator find(const K &val) const
+        {
+            Compare com;
+            Node *cur = this->header_->parent_;
+            while (cur)
+            {
+                if (com(val, cur->data_))
+                {
+                    // 左子树中查找
+                    cur = cur->left_;
+                }
+                else if (com(cur->data_, val))
+                {
+                    // 右子树中查找
+                    cur = cur->right_;
+                }
+                else
+                {
+                    // 找到了
+                    return iterator(cur);
+                }
+            }
+            return iterator(this->header_);
+        }
+
+        // 删除接口
+        iterator erase(const_iterator pos)
+        {
+            Compare com;
+            iterator next = pos.node_;
+            ++next;
+            // 1. 计算中序后继，作为返回值
+            Node *target = pos.node_; // 待删除节点
+            Node *successor = next.node_;
+
+            // 2. 定位待真正删除的节点 del and its parent delP
+            Node *del = nullptr, *delP = nullptr;
+            if (!target->left_ || !target->right_)
+            {
+                // 度0或1：直接删除 target
+                del = target;
+                delP = target->parent_;
+            }
+            else
+            {
+                // 情况 B/双子：交换数据后，将后继节点（必为半叶）设为删除对象
+                this->copy_delete_node(target->data_, successor->data_);
+                del = successor;
+                delP = successor->parent_;
+                next = iterator(pos.node_);
+            }
+
+            // 3. 红黑树删除调整
+            Node *del_node = del;
+            Node *del_node_parent = delP;
+            this->adjust_erase(del, delP);                // 恢复红黑性质
+            this->delete_node(del_node, del_node_parent); // 实际摘除节点并释放
+            --size_;
+
+            // 4. 更新 header 的最小/最大指针（若有）
+            adjust_header_pointers(this->header_->parent_);
+
+            // 5. 返回先前保存的后继
+            return next;
+        }
+        iterator erase(const_iterator first, const_iterator last)
+        {
+            // 如果删除整个树，直接 clear
+            if (first == begin() && last == end())
+            {
+                clear();
+                return end();
+            }
+
+            // 否则逐节点删除，因为删除存在替换删除逻辑
+            // 如果last被替换，可能
+            const_iterator ret = last.node_;
+            while (first != last)
+            {
+                const_iterator cur = first++;
+                ret = erase(cur);
+                if (ret != first && first != last)
+                {
+                    first = ret;
+                }
+            }
+            return iterator(ret.node_); // 返回下一个有效迭代器
+        }
+        size_t erase(const K &key)
+        {
+            const_iterator iter = find(key);
+            if (iter == end())
+                return 0;
+            erase(iter);
+            return 1;
+        }
+
+        // 获取有效数据个数
+        size_t size() const
+        {
+            return size_;
+        }
+
+        // 判断是否为空
+        bool empty() const
+        {
+            return size_ == 0;
+        }
+
+        void swap(RBTree &rb_tree)
+        {
+            std::swap(this->header_, rb_tree.header_);
+            std::swap(size_, rb_tree.size_);
+        }
+
+        // 清空节点
+        void clear()
+        {
+            destroy(this->header_->parent_);
+            this->header_->parent_ = nullptr;
+            this->header_->left_ = this->header_;
+            this->header_->right_ = this->header_;
+            size_ = 0;
+        }
+
+        ~RBTree()
+        {
+            if (this->header_)
+            {
+                clear();
+                delete this->header_;
+            }
+        }
+
+    private:
         // 销毁除header之外的节点
         void destroy(Node *&root)
         {
@@ -1002,11 +987,11 @@ namespace zstl
         // 初始化头节点
         void init_header()
         {
-            header_ = new Node(T());
-            header_->col_ = Color::RED;
-            header_->left_ = header_;
-            header_->right_ = header_;
-            header_->parent_ = nullptr;
+            this->header_ = new Node(T());
+            this->header_->col_ = Color::RED;
+            this->header_->left_ = this->header_;
+            this->header_->right_ = this->header_;
+            this->header_->parent_ = nullptr;
             size_ = 0;
         }
 
@@ -1015,8 +1000,8 @@ namespace zstl
         {
             if (root == nullptr)
             {
-                header_->left_ = header_;
-                header_->right_ = header_;
+                this->header_->left_ = this->header_;
+                this->header_->right_ = this->header_;
                 return;
             }
             // 查找最小节点（最左节点）
@@ -1025,7 +1010,7 @@ namespace zstl
             {
                 min_node = min_node->left_;
             }
-            header_->left_ = min_node;
+            this->header_->left_ = min_node;
 
             // 查找最大节点（最右节点）
             Node *max_node = root;
@@ -1033,12 +1018,12 @@ namespace zstl
             {
                 max_node = max_node->right_;
             }
-            header_->right_ = max_node;
-            header_->parent_->parent_ = header_;
+            this->header_->right_ = max_node;
+            this->header_->parent_->parent_ = this->header_;
         }
 
     private:
-        Node *header_; // 头节点
-        size_t size_;  // 节点数量
+        // Node *header_; // 头节点
+        size_t size_; // 节点数量
     };
 };

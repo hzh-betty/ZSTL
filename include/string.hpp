@@ -19,8 +19,14 @@ namespace zstl
         const_iterator end() const { return str_ + size_; }
 
     public:
+        string()
+        {
+            str_ = new char[1];
+            str_[0] = '\0';
+        }
+
         // 构造函数：默认构造空字符串，深拷贝C字符串
-        string(const char *str = "")
+        string(const char *str)
             : size_(strlen(str)),
               capacity_(size_),
               str_(new char[capacity_ + 1]) // +1存放'\0'
@@ -29,16 +35,18 @@ namespace zstl
         }
 
         // 拷贝构造：通过临时对象交换实现深拷贝
-        string(const string &tmp) : size_(0), capacity_(0), str_(nullptr)
+        string(const string &other) :  size_(other.size_), capacity_(other.capacity_), str_(nullptr) 
         {
-            string t(tmp.str_); // 构造临时对象
-            swap(t);            // 资源交换
+            if (other.str_) {
+                str_ = new char[capacity_ + 1];
+                memcpy(str_, other.str_, size_ + 1);
+            }
         }
 
         // 赋值运算符：传值调用自动复用拷贝构造
-        string &operator=(const string&str)
+        string &operator=(const string &str)
         {
-            if(this != &str)
+            if (this != &str)
             {
                 string tmp(str);
                 swap(tmp); // 交换资源后tmp自动析构旧数据
@@ -57,7 +65,7 @@ namespace zstl
         string &operator=(const char *s)
         {
             clear();
-            insert(0,s);
+            insert(0, s);
             return *this;
         }
         // 移动赋值运算符
@@ -262,7 +270,7 @@ namespace zstl
         // 析构函数：释放堆内存
         ~string()
         {
-            if(str_)
+            if (str_)
             {
                 delete[] str_;  // 释放字符数组
                 str_ = nullptr; // 防止悬垂指针
@@ -279,9 +287,9 @@ namespace zstl
         }
 
     private:
-        size_t size_;     // 有效字符数（不含'\0'）
-        size_t capacity_; // 分配的空间容量
-        char *str_;       // 堆内存指针
+        size_t size_ = 0;     // 有效字符数（不含'\0'）
+        size_t capacity_ = 0; // 分配的空间容量
+        char *str_ = nullptr; // 堆内存指针
     };
     // 流输出：使用迭代器遍历输出
     std::ostream &operator<<(std::ostream &out, const string &s)
