@@ -14,7 +14,7 @@ namespace zstl
         EXPECT_EQ(ms.size(), 0);
 
         // 插入元素
-        auto it1 = ms.insert(10);
+        unordered_multiset<int> ::iterator it1 = ms.insert(10);
         EXPECT_NE(it1, ms.end()); // 插入成功，迭代器有效
         EXPECT_FALSE(ms.empty());
         EXPECT_EQ(ms.size(), 1);

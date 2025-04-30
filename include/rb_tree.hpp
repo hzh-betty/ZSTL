@@ -1023,7 +1023,6 @@ namespace zstl
         }
 
     private:
-        // Node *header_; // 头节点
         size_t size_; // 节点数量
     };
 };

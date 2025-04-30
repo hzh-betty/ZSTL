@@ -18,8 +18,8 @@ namespace zstl
     };
 
     template <typename K, typename Compare = SetCompare<K>>
-    using set = assoc_tree<K, null_type, Compare, true>;
+    using set = assoc_tree<K, tree_null_type, Compare, true>;
     
     template <typename K, typename Compare = SetCompare<K>>
-    using multiset = assoc_tree<K, null_type, Compare, false>;
+    using multiset = assoc_tree<K, tree_null_type, Compare, false>;
 };

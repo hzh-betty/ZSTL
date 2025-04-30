@@ -39,8 +39,7 @@ namespace zstl
             : node_(node), ht_(ht) {}
 
         // 允许不同类型的迭代器转换
-        HashTableIterator(
-            const HashTableIterator<Key, Value, Value &, Value *, HashFunc, CompareFunc> &it)
+        HashTableIterator(const HashTableIterator<Key, Value, Value &, Value *, HashFunc, CompareFunc> &it)
             : node_(it.node_), ht_(it.ht_) {}
 
         // 获取节点数据
@@ -155,9 +154,12 @@ namespace zstl
             size_ = ht.size_;
         }
         // 赋值：交换
-        HashTable &operator=(HashTable ht)
+        HashTable &operator=(const HashTable& ht)
         {
-            swap(ht);
+            if(this != &ht)
+            {
+                swap(ht);
+            }
             return *this;
         }
 
