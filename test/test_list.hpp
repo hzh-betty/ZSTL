@@ -241,17 +241,14 @@ namespace zstl
         li1.push_back(3);
 
         list<int> li2(std::move(li1));
-        std::cout<<"11111111"<<std::endl;
         EXPECT_EQ(li2.size(), 3);
         auto it = li2.begin();
         EXPECT_EQ(*it, 1);
-        std::cout<<"22222222"<<std::endl;
         ++it;
         EXPECT_EQ(*it, 2);
         ++it;
         EXPECT_EQ(*it, 3);
         EXPECT_EQ(li1.size(), 0);
-        std::cout<<"33333333"<<std::endl;
     }
 
     // 测试移动赋值

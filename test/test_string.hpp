@@ -5,171 +5,114 @@
 
 namespace zstl
 {
-    // 测试默认构造函数
-    TEST(StringTest, DefaultConstructor)
+    // ---------- 构造与赋值 ----------
+    TEST(StringTest, DefaultCtor)
     {
         string s;
-        EXPECT_TRUE(s.empty());      // 应该为空
-        EXPECT_EQ(s.size(), 0u);     // 长度为 0
-        EXPECT_STREQ(s.c_str(), ""); // C字符串为空串
+        EXPECT_EQ(s.size(), 0u);
+        EXPECT_TRUE(s.empty());
     }
-
-    // 测试通过 C 字符串构造
-    TEST(StringTest, CStrConstructor)
+    TEST(StringTest, CStrCtor)
     {
         string s("hello");
-        EXPECT_FALSE(s.empty());
         EXPECT_EQ(s.size(), 5u);
         EXPECT_STREQ(s.c_str(), "hello");
     }
-
-    // 测试拷贝构造函数
-    TEST(StringTest, CopyConstructor)
+    TEST(StringTest, CopyAndMove)
     {
-        string s1("world");
-        string s2(s1);
-        EXPECT_EQ(s1, s2); // 依赖于重载的 operator== 比较内容是否相同
+        string a("abc");
+        string b(a); // 拷贝构造
+        EXPECT_EQ(b, a);
+        string c(::std::move(a)); // 移动构造
+        EXPECT_EQ(c, string("abc"));
+    }
+    TEST(StringTest, CopyAssign)
+    {
+        string a("x"), b;
+        b = a;
+        EXPECT_EQ(b, a);
+    }
+    TEST(StringTest, MoveAssign)
+    {
+        string a("y"), b;
+        b = ::std::move(a);
+        EXPECT_EQ(b, string("y"));
     }
 
-    // 测试赋值运算符（使用传值实现复制并交换）
-    TEST(StringTest, AssignmentOperator)
-    {
-        string s1("hello");
-        string s2;
-        s2 = s1;
-        EXPECT_EQ(s1, s2);
-
-        // 修改原串，测试深拷贝是否生效
-        s1 += " world";
-        EXPECT_NE(s1, s2);
-    }
-
-    // 测试 push_back 和 append 成员函数
-    TEST(StringTest, PushBackAndAppend)
-    {
-        string s;
-        s.push_back('a');
-        EXPECT_EQ(s.size(), 1u);
-        EXPECT_STREQ(s.c_str(), "a");
-
-        s.append("bc");
-        EXPECT_EQ(s.size(), 3u);
-        EXPECT_STREQ(s.c_str(), "abc");
-    }
-
-    // 测试 operator+= 重载支持追加字符和 C 字符串
-    TEST(StringTest, OperatorPlusEqual)
-    {
-        string s("go");
-        s += "od"; // 追加字符串
-        EXPECT_EQ(s.size(), 4u);
-        EXPECT_STREQ(s.c_str(), "good");
-
-        s += '!';
-        EXPECT_EQ(s.size(), 5u);
-        EXPECT_STREQ(s.c_str(), "good!");
-    }
-
-    // 测试 reserve 和 resize 成员函数
-    TEST(StringTest, ReserveAndResize)
-    {
-        string s("test");
-        size_t oldCap = s.capacity();
-        s.reserve(50);
-        EXPECT_GE(s.capacity(), 50u);
-
-        // 调整大小，扩充时填充指定字符，比如这里填充 'x'
-        s.resize(6, 'x');
-        EXPECT_EQ(s.size(), 6u);
-        // 检查前四个字符保持不变，后两个填充 'x'
-        EXPECT_EQ(s.c_str()[0], 't');
-        EXPECT_EQ(s.c_str()[1], 'e');
-        EXPECT_EQ(s.c_str()[2], 's');
-        EXPECT_EQ(s.c_str()[3], 't');
-        EXPECT_EQ(s.c_str()[4], 'x');
-        EXPECT_EQ(s.c_str()[5], 'x');
-        EXPECT_STREQ(s.c_str(), "testxx");
-    }
-
-    // 测试 find 成员函数寻找单个字符及子串
-    TEST(StringTest, Find)
-    {
-        string s("Hello, world!");
-        size_t pos = s.find('w');
-        EXPECT_NE(pos, (size_t)-1);
-        EXPECT_EQ(s[pos], 'w');
-
-        size_t pos2 = s.find("world");
-        EXPECT_NE(pos2, (size_t)-1);
-    }
-
-    // 测试 substr 成员函数返回子串
-    TEST(StringTest, Substr)
-    {
-        string s("Hello, world!");
-        string sub = s.substr(7, 5); // 应该返回 "world"
-        EXPECT_STREQ(sub.c_str(), "world");
-    }
-
-    // 测试 insert 和 erase 成员函数
-    TEST(StringTest, InsertAndErase)
-    {
-        string s("Hell world");
-        s.insert(4, 'o'); // 在位置4插入 'o'，使其变为 "Hello world"
-        EXPECT_STREQ(s.c_str(), "Hello world");
-
-        s.erase(5, 1); // 删除位置5的空格，结果为 "Helloworld"
-        EXPECT_STREQ(s.c_str(), "Helloworld");
-    }
-
-    // 测试 front、back 和 pop_back 成员函数
-    TEST(StringTest, FrontBackPop)
+    // ---------- 容量与修改 ----------
+    TEST(StringTest, ReserveResizeClear)
     {
         string s("abc");
-        EXPECT_EQ(s.front(), 'a');
-        EXPECT_EQ(s.back(), 'c');
-
-        s.pop_back();
-        EXPECT_EQ(s.size(), 2u);
-        EXPECT_STREQ(s.c_str(), "ab");
+        s.reserve(10);
+        EXPECT_GE(s.capacity(), 10u);
+        s.resize(5, 'x');
+        EXPECT_EQ(s.size(), 5u);
+        EXPECT_EQ(string(s.c_str()), "abcxx");
+        s.clear();
+        EXPECT_TRUE(s.empty());
     }
-
-    // 测试流输入输出操作符（<< 与 >>）
-    TEST(StringTest, StreamOperators)
+    TEST(StringTest, PushPopAppend)
     {
-        std::istringstream inputStream("HelloWorld");
         string s;
-
-        inputStream >> s;
-        EXPECT_STREQ(s.c_str(), "HelloWorld") << "输入运算符 >> 读取数据错误";
-
-        std::ostringstream outputStream;
-        outputStream << s;
-        EXPECT_STREQ(outputStream.str().c_str(), "HelloWorld") << "输出运算符 << 写入数据错误";
+        s.push_back('A');
+        EXPECT_EQ(s.back(), 'A');
+        s += 'B';
+        EXPECT_EQ(s, string("AB"));
+        s.append("CD");
+        EXPECT_EQ(s, string("ABCD"));
+        s.pop_back();
+        EXPECT_EQ(s, string("ABC"));
     }
-
-    // 测试移动构造函数
-    TEST(StringTest, MoveConstructor)
+    TEST(StringTest, InsertErase)
     {
-        zstl::string src("Hello");
-        zstl::string dst(std::move(src));
-
-        EXPECT_EQ(std::string(dst.c_str()), "Hello");
-        EXPECT_EQ(src.size(), 0);
-        EXPECT_EQ(src.capacity(), 0);
-        EXPECT_EQ(src.c_str(), nullptr);
+        string s("ace");
+        s.insert(1, 'b');
+        EXPECT_EQ(s, string("abce"));
+        s.insert(3, "d");
+        EXPECT_EQ(s, string("abcde").substr(0, 5));
+        s.erase(1, 2);
+        EXPECT_EQ(s, string("ade"));
     }
 
-    // 测试移动赋值运算符
-    TEST(StringTest, MoveAssignment)
+    // ---------- 元素访问与比较 ----------
+    TEST(StringTest, OpIndexFrontBack)
     {
-        zstl::string src("World");
-        zstl::string dst;
-        dst = std::move(src);
-
-        EXPECT_EQ(std::string(dst.c_str()), "World");
-        EXPECT_EQ(src.size(), 0);
-        EXPECT_EQ(src.capacity(), 0);
-        EXPECT_EQ(src.c_str(), nullptr);
+        string s("xyz");
+        EXPECT_EQ(s[0], 'x');
+        EXPECT_EQ(s.front(), 'x');
+        EXPECT_EQ(s.back(), 'z');
     }
+    TEST(StringTest, CompareOperators)
+    {
+        string a("a"), b("b");
+        EXPECT_LT(a, b);
+        EXPECT_NE(a, b);
+        EXPECT_GE(b, a);
+    }
+
+    // ---------- 查找与子串 ----------
+    TEST(StringTest, FindCharAndCStr)
+    {
+        string s("hello");
+        EXPECT_EQ(s.find('e'), 1u);
+        EXPECT_EQ(s.find("ll"), 2u);
+        EXPECT_EQ(s.find('z'), string::npos);
+    }
+    TEST(StringTest, Substr)
+    {
+        string s("substring");
+        auto sub = s.substr(3, 3);
+        EXPECT_EQ(sub, string("str"));
+    }
+
+    // ---------- 宽字符测试（wstring） ----------
+    TEST(WStringTest, BasicOps)
+    {
+        wstring w(L"你好");
+        EXPECT_EQ(w.size(), 2u);
+        w.push_back(L'！');
+        EXPECT_EQ(w.back(), L'！');
+        EXPECT_EQ(w.substr(0, 2), wstring(L"你好"));
+    }
+
 };

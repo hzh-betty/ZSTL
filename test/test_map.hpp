@@ -77,7 +77,6 @@ namespace zstl
         m[2] = "two";
         m[3] = "three";
         EXPECT_EQ(m.size(), 3);
-
         // erase(key) 返回被删除元素个数
         size_t ec = m.erase(2);
         EXPECT_EQ(ec, 1);

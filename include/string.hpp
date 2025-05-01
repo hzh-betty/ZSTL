@@ -1,329 +1,370 @@
 #pragma once
 #include <iostream>
-#include <cstring>
 #include <cassert>
-
+#include <cstring>
 namespace zstl
 {
-    class string
+    // 通用 char_traits
+    template <class CharType>
+    struct char_traits
+    {
+        using char_type = CharType;
+        // 计算长度：遍历直到终止符
+        static size_t length(const char_type *str) noexcept
+        {
+            size_t len = 0;
+            for (; *str != char_type(0); ++str)
+                ++len;
+            return len;
+        }
+        // 比较前 n 个字符
+        static int compare(const char_type *s1, const char_type *s2, size_t n) noexcept
+        {
+            for (; n; --n, ++s1, ++s2)
+            {
+                if (*s1 < *s2)
+                    return -1;
+                if (*s2 < *s1)
+                    return 1;
+            }
+            return 0;
+        }
+        // 拷贝不重叠区间
+        static char_type *copy(char_type *dst, const char_type *src, size_t n) noexcept
+        {
+            assert(src + n <= dst || dst + n <= src);
+            char_type *r = dst;
+            for (; n; --n, ++dst, ++src)
+                *dst = *src;
+            return r;
+        }
+        // 移动支持重叠
+        static char_type *move(char_type *dst, const char_type *src, size_t n) noexcept
+        {
+            char_type *r = dst;
+            if (dst < src)
+            {
+                for (; n; --n, ++dst, ++src)
+                    *dst = *src;
+            }
+            else if (src < dst)
+            {
+                dst += n;
+                src += n;
+                for (; n; --n)
+                    *--dst = *--src;
+            }
+            return r;
+        }
+        // 填充指定字符
+        static char_type *fill(char_type *dst, char_type ch, size_t count) noexcept
+        {
+            char_type *r = dst;
+            for (; count; --count, ++dst)
+                *dst = ch;
+            return r;
+        }
+    };
+
+    // char 特化使用库函数
+    template <>
+    struct char_traits<char>
+    {
+        using char_type = char;
+        static size_t length(const char_type *str) noexcept { return strlen(str); }
+        static int compare(const char_type *s1, const char_type *s2, size_t n) noexcept { return memcmp(s1, s2, n); }
+        static char_type *copy(char_type *dst, const char_type *src, size_t n) noexcept
+        {
+            assert(src + n <= dst || dst + n <= src);
+            return (char *)memcpy(dst, src, n);
+        }
+        static char_type *move(char_type *dst, const char_type *src, size_t n) noexcept { return (char *)memmove(dst, src, n); }
+        static char_type *fill(char_type *dst, char_type ch, size_t count) noexcept { return (char *)memset(dst, ch, count); }
+    };
+
+    // basic_string 类：所有函数在类内实现
+    template <typename CharT, typename Traits = char_traits<CharT>>
+    class basic_string
     {
     public:
-        using iterator = char *;
-        using const_iterator = const char *;
-        static const size_t npos = -1; // 末尾特殊标记
+        using char_type = CharT;
+        using traits_type = Traits;
+        using size_type = size_t;
+        using iterator = CharT *;
+        using const_iterator = const CharT *;
+        inline static const size_type npos = -1;
 
-        // 迭代器操作（直接使用原生指针实现）
-        iterator begin() { return str_; }             // 返回首元素指针
-        const_iterator begin() const { return str_; } // const版本迭代器
-        iterator end() { return str_ + size_; }       // 返回末元素后一位指针
-        const_iterator end() const { return str_ + size_; }
-
-    public:
-        string()
+        // 默认构造：分配 1，写入终止符
+        basic_string()
         {
-            str_ = new char[1];
-            str_[0] = '\0';
+            str_ = new CharT[1];
+            Traits::fill(str_, CharT(0), 1);
         }
-
-        // 构造函数：默认构造空字符串，深拷贝C字符串
-        string(const char *str)
-            : size_(strlen(str)),
-              capacity_(size_),
-              str_(new char[capacity_ + 1]) // +1存放'\0'
+        // C 字符串构造：复制并设置容量
+        basic_string(const CharT *s)
         {
-            strcpy(str_, str);
+            size_ = Traits::length(s);
+            capacity_ = size_;
+            str_ = new CharT[capacity_ + 1];
+            Traits::copy(str_, s, size_ + 1);
         }
-
-        // 拷贝构造：通过临时对象交换实现深拷贝
-        string(const string &other) :  size_(other.size_), capacity_(other.capacity_), str_(nullptr) 
+        // 拷贝构造：深拷贝缓冲区
+        basic_string(const basic_string &o)
+            : size_(o.size_), capacity_(o.capacity_)
         {
-            if (other.str_) {
-                str_ = new char[capacity_ + 1];
-                memcpy(str_, other.str_, size_ + 1);
-            }
-        }
-
-        // 赋值运算符：传值调用自动复用拷贝构造
-        string &operator=(const string &str)
-        {
-            if (this != &str)
+            if(o.str_)
             {
-                string tmp(str);
-                swap(tmp); // 交换资源后tmp自动析构旧数据
+                str_ = new CharT[capacity_ + 1];
+                Traits::copy(str_, o.str_, size_ + 1);
+            }
+        }
+        // 移动构造：接管指针，置空源
+        basic_string(basic_string &&o) noexcept
+            : str_(o.str_), size_(o.size_), capacity_(o.capacity_)
+        {
+            o.str_ = nullptr;
+            o.size_ = o.capacity_ = 0;
+        }
+        ~basic_string() { delete[] str_; }
+
+        // 拷贝赋值：拷贝-交换
+        basic_string &operator=(const basic_string &o)
+        {
+            if (this != &o)
+            {
+                basic_string tmp(o);
+                swap(tmp);
             }
             return *this;
         }
-        // 移动构造函数
-        string(string &&s)
-            : str_(s.str_), size_(s.size_), capacity_(s.capacity_)
+        // 移动赋值：释放后接管
+        basic_string &operator=(basic_string &&o) noexcept
         {
-            s.str_ = nullptr;
-            s.size_ = s.capacity_ = 0;
-        }
-
-        // 新增接收 const char* 类型参数的赋值运算符
-        string &operator=(const char *s)
-        {
-            clear();
-            insert(0, s);
-            return *this;
-        }
-        // 移动赋值运算符
-        string &operator=(string &&s)
-        {
-            if (this != &s)
+            if (this != &o)
             {
                 delete[] str_;
-                str_ = s.str_;
-                size_ = s.size_;
-                capacity_ = s.capacity_;
-                s.str_ = nullptr;
-                s.size_ = s.capacity_ = 0;
+                str_ = o.str_;
+                size_ = o.size_;
+                capacity_ = o.capacity_;
+                o.str_ = nullptr;
+                o.size_ = o.capacity_ = 0;
             }
             return *this;
         }
 
-        // 获取C风格字符串（保证以'\0'结尾）
-        const char *c_str() const { return str_; }
+        // 迭代器
+        iterator begin() noexcept { return str_; }
+        const_iterator begin() const noexcept { return str_; }
+        iterator end() noexcept { return str_ + size_; }
+        const_iterator end() const noexcept { return str_ + size_; }
 
-        // 下标访问：非const版本可修改
-        char &operator[](size_t pos)
-        {
-            assert(pos < size_); // 越界检查
-            return str_[pos];
-        }
-        const char &operator[](size_t pos) const
-        {
-            assert(pos < size_);
-            return str_[pos];
-        }
-
-        // 容量相关操作
-        size_t capacity() const { return capacity_; } // 当前分配容量
-        size_t size() const { return size_; }         // 实际字符数（不含'\0'）
-
-        // 扩容：仅当n>capacity当前容量时生效
-        void reserve(size_t n)
+        // 容量相关
+        size_type size() const { return size_; }
+        size_type capacity() const { return capacity_; }
+        bool empty() const noexcept { return size_ == 0; }
+        void reserve(size_type n)
         {
             if (n > capacity_)
             {
-                char *tmp = new char[n + 1]; // 新空间
-                strcpy(tmp, str_);           // 复制原内容
-                delete[] str_;               // 释放旧空间
+                CharT *tmp = new CharT[n + 1];
+                Traits::copy(tmp, str_, size_ + 1);
+                delete[] str_;
                 str_ = tmp;
-                capacity_ = n; // 更新容量
+                capacity_ = n;
             }
         }
-
-        // 调整大小：newSize>size时填充字符，否则截断
-        void resize(size_t new_size, char c = '\0')
+        void resize(size_type n, CharT c = CharT())
         {
-            if (new_size > size_)
+            if (n > size_)
             {
-                if (new_size > capacity_)
-                    reserve(new_size);
-                memset(str_ + size_, c, new_size - size_); // 填充指定字符
+                reserve(n);
+                Traits::fill(str_ + size_, c, n - size_);
             }
-            size_ = new_size;
-            str_[new_size] = '\0'; // 确保终止符
+            size_ = n;
+            str_[size_] = CharT(0);
         }
-
-        void clear()
+        void clear() noexcept
         {
-            str_[0] = '\0'; // 清空内容
             size_ = 0;
+            if (str_)
+                Traits::fill(str_, CharT(0), 1);
         }
 
-        bool empty() const { return size_ == 0; }
-
-        // 追加单个字符（2倍扩容策略）
-        void push_back(char ch)
+        // 元素访问
+        CharT &operator[](size_type p)
         {
-            if (size_ == capacity_) // 容量检查
-            {
-                size_t newCapacity = capacity_ ? capacity_ * 2 : 4;
-                reserve(newCapacity);
-            }
-            str_[size_++] = ch; // 写入字符
-            str_[size_] = '\0'; // 维护终止符
+            assert(p < size_);
+            return str_[p];
         }
-
-        // 追加C字符串
-        void append(const char *s)
+        const CharT &operator[](size_type p) const
         {
-            size_t len = strlen(s);
-            if (len + size_ > capacity_)
-                reserve(len + size_);
-            memcpy(str_ + size_, s, len + 1); // 包含'\0'
-            size_ += len;
+            assert(p < size_);
+            return str_[p];
         }
+        CharT &front()
+        {
+            assert(size_);
+            return str_[0];
+        }
+        const CharT &front() const
+        {
+            assert(size_);
+            return str_[0];
+        }
+        CharT &back()
+        {
+            assert(size_);
+            return str_[size_ - 1];
+        }
+        const CharT &back() const
+        {
+            assert(size_);
+            return str_[size_ - 1];
+        }
+        const CharT *c_str() const { return str_; }
 
-        // 运算符重载复用已有函数
-        string &operator+=(char ch)
+        // 修改器
+        void push_back(CharT ch)
+        {
+            if (size_ + 1 > capacity_)
+                reserve(capacity_ ? capacity_ * 2 : 4);
+            str_[size_++] = ch;
+            str_[size_] = CharT(0);
+        }
+        basic_string &operator+=(CharT ch)
         {
             push_back(ch);
             return *this;
         }
-        string &operator+=(const char *s)
+        basic_string &operator+=(const CharT *s)
         {
             append(s);
             return *this;
         }
+        void append(const CharT *s)
+        {
+            size_type l = Traits::length(s);
+            if (size_ + l > capacity_)
+                reserve(size_ + l);
+            Traits::copy(str_ + size_, s, l + 1);
+            size_ += l;
+        }
+        void insert(size_type pos, CharT ch)
+        {
+            assert(pos <= size_);
+            if (size_ + 1 > capacity_)
+                reserve(capacity_ ? capacity_ * 2 : 4);
+            Traits::move(str_ + pos + 1, str_ + pos, size_ - pos + 1);
+            str_[pos] = ch;
+            ++size_;
+        }
 
-        // 查找字符/子串（返回位置或npos）
-        size_t find(char ch, size_t pos = 0) const
+        void insert(size_type pos, const CharT *s)
+        {
+            assert(pos <= size_);
+            size_type l = Traits::length(s);
+            if (size_ + l > capacity_)
+                reserve(size_ + l);
+            Traits::move(str_ + pos + l, str_ + pos, size_ - pos + 1);
+            Traits::copy(str_ + pos, s, l);
+            size_ += l;
+        }
+
+        void erase(size_type pos, size_type len = npos)
+        {
+            assert(pos < size_);
+            if (len == npos || pos + len >= size_)
+            {
+                size_ = pos;
+                str_[pos] = CharT(0);
+            }
+            else
+            {
+                Traits::move(str_ + pos, str_ + pos + len, size_ - pos - len + 1);
+                size_ -= len;
+            }
+        }
+        void pop_back()
+        {
+            if (size_)
+            {
+                --size_;
+                str_[size_] = CharT(0);
+            }
+        }
+        void swap(basic_string &o) noexcept
+        {
+            std::swap(str_, o.str_);
+            std::swap(size_, o.size_);
+            std::swap(capacity_, o.capacity_);
+        }
+
+        // 查找与子串
+        size_type find(CharT ch, size_type pos = 0) const
         {
             for (; pos < size_; ++pos)
                 if (str_[pos] == ch)
                     return pos;
             return npos;
         }
-        size_t find(const char *s, size_t pos = 0) const
+        size_type find(const CharT *s, size_type pos = 0) const noexcept
         {
-            const char *p = strstr(str_ + pos, s);
-            return p ? p - str_ : npos;
+            size_type l = Traits::length(s);
+            for (; pos + l <= size_; ++pos)
+                if (Traits::compare(str_ + pos, s, l) == 0)
+                    return pos;
+            return npos;
         }
-
-        // 截取子串：处理npos和越界情况
-        string substr(size_t pos, size_t len = npos)
+        basic_string substr(size_type pos, size_type len = npos) const
         {
-            string ret;
-            size_t end = pos + len;
-            if (len == npos || end > size_)
-            {
+            basic_string r;
+            if (pos > size_)
+                return r;
+            if (len == npos || pos + len > size_)
                 len = size_ - pos;
-                end = size_;
-            }
-            ret.reserve(len);
-            for (; pos < end; ++pos)
-                ret += str_[pos];
-            return ret;
+            r.reserve(len);
+            Traits::copy(r.str_, str_ + pos, len);
+            r.size_ = len;
+            r.str_[len] = CharT(0);
+            return r;
         }
 
-        // 插入操作
-        void insert(size_t pos, char ch)
+        // 比较运算符
+        bool operator<(const basic_string &s) const
         {
-            assert(pos <= size_);
-            if (size_ == capacity_)
-                reserve(capacity_ ? capacity_ * 2 : 4);
-
-            // 从后向前移动元素
-            for (size_t i = size_ + 1; i > pos; --i)
-                str_[i] = str_[i - 1];
-            str_[pos] = ch;
-            ++size_;
-            str_[size_] = '\0';
+            size_type m = size_ < s.size_ ? size_ : s.size_;
+            int c = Traits::compare(str_, s.str_, m);
+            return c < 0 || (c == 0 && size_ < s.size_);
         }
+        bool operator>(const basic_string &s) const { return s < *this; }
+        bool operator==(const basic_string &s) const { return size_ == s.size_ && Traits::compare(str_, s.str_, size_) == 0; }
+        bool operator<=(const basic_string &s) const { return !(*this > s); }
+        bool operator>=(const basic_string &s) const { return !(*this < s); }
+        bool operator!=(const basic_string &s) const { return !(*this == s); }
 
-        void insert(size_t pos, const char *s)
+        // I/O 友元
+        friend std::istream &operator>>(std::istream &is, basic_string &str)
         {
-            assert(pos <= size_);
-            size_t len = strlen(s);
-            if (size_ + len > capacity_)
-                reserve(size_ + len);
-
-            // 移动原有元素
-            for (int i = size_; i >= (int)pos; --i)
-                str_[i + len] = str_[i];
-            memcpy(str_ + pos, s, len);
-            size_ += len;
+            CharT *buf = new CharT[4096];
+            is >> buf;
+            basic_string t(buf);
+            str = std::move(t);
+            delete[] buf;
+            return is;
         }
-
-        // 首尾元素访问
-        char &front() { return str_[0]; }
-        char &back() { return str_[size_ - 1]; }
-        const char &front() const { return str_[0]; }
-        const char &back() const { return str_[size_ - 1]; }
-
-        void pop_back()
+        friend std::ostream &operator<<(std::ostream &os, const basic_string &str)
         {
-            if (size_ > 0)
-                str_[--size_] = '\0';
-        }
-
-        // 删除操作：处理npos和越界
-        void erase(size_t pos, size_t len = npos)
-        {
-            assert(pos < size_);
-            if (len >= size_ - pos || len == npos)
-            {
-                str_[pos] = '\0';
-                size_ = pos;
-            }
-            else
-            {
-                // 向前移动元素
-                for (size_t i = pos + len; i <= size_; ++i)
-                    str_[i - len] = str_[i];
-                size_ -= len;
-            }
-        }
-
-        // 比较运算符（直接使用strcmp）
-        bool operator<(const string &s) const { return strcmp(str_, s.str_) < 0; }
-        bool operator>(const string &s) const { return strcmp(str_, s.str_) > 0; }
-        bool operator==(const string &s) const { return strcmp(str_, s.str_) == 0; }
-        bool operator<=(const string &s) const { return !(*this > s); }
-        bool operator>=(const string &s) const { return !(*this < s); }
-        bool operator!=(const string &s) const { return !(*this == s); }
-
-        // 析构函数：释放堆内存
-        ~string()
-        {
-            if (str_)
-            {
-                delete[] str_;  // 释放字符数组
-                str_ = nullptr; // 防止悬垂指针
-                size_ = capacity_ = 0;
-            }
-        }
-
-        // 高效交换：直接交换成员变量
-        void swap(string &s)
-        {
-            std::swap(size_, s.size_);
-            std::swap(capacity_, s.capacity_);
-            std::swap(str_, s.str_);
+            for (size_type i = 0; i < str.size_; ++i)
+                os << str.str_[i];
+            return os;
         }
 
     private:
-        size_t size_ = 0;     // 有效字符数（不含'\0'）
-        size_t capacity_ = 0; // 分配的空间容量
-        char *str_ = nullptr; // 堆内存指针
+        CharT *str_ = nullptr;
+        size_type size_ = 0;
+        size_type capacity_ = 0;
     };
-    // 流输出：使用迭代器遍历输出
-    std::ostream &operator<<(std::ostream &out, const string &s)
-    {
-        for (auto &ch : s)
-            out << ch;
-        return out;
-    }
 
-    // 流输入：使用缓冲区减少扩容次数
-    std::istream &operator>>(std::istream &in, string &s)
-    {
-        s.clear();
-        char buf[128]; // 局部缓冲区
-        int i = 0;
-        int ch = in.get(); // 用 int 保存返回值
-
-        // 读取直到空格、换行或遇到 EOF（-1）
-        while (in.good() && ch != EOF && ch != ' ' && ch != '\n')
-        {
-            buf[i++] = static_cast<char>(ch);
-            if (i == 127)
-            { // 缓冲区满时批量处理
-                buf[i] = '\0';
-                s += buf;
-                i = 0;
-            }
-            ch = in.get();
-        }
-        if (i > 0)
-        { // 处理剩余数据
-            buf[i] = '\0';
-            s += buf;
-        }
-        return in;
-    }
-}
+    using string = basic_string<char>;
+    using wstring = basic_string<wchar_t>;
+};
