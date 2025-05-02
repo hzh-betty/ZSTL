@@ -121,11 +121,8 @@ namespace zstl
         basic_string(const basic_string &o)
             : size_(o.size_), capacity_(o.capacity_)
         {
-            if (o.str_)
-            {
-                str_ = new CharT[capacity_ + 1];       // 分配新内存
-                Traits::copy(str_, o.str_, size_ + 1); // 拷贝内容
-            }
+            str_ = new CharT[capacity_ + 1];       // 分配新内存
+            Traits::copy(str_, o.str_, size_ + 1); // 拷贝内容
         }
 
         // 移动构造函数：资源转移（原对象置空）

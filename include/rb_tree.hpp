@@ -491,7 +491,7 @@ namespace zstl
             // 创建并挂接
             Node *newnode = new Node(std::move(data));
             newnode->parent_ = parent;
-            this->link_node(newnode, parent, data);
+            this->link_node(newnode, parent);
 
             // 平衡调整
             this->adjust_insert(newnode, parent);
@@ -504,7 +504,7 @@ namespace zstl
         }
 
         // 插入链接节点
-        void link_node(Node *newnode, Node *parent, const T &data)
+        void link_node(Node *newnode, Node *parent)
         {
             Compare com;
             if (parent == this->header_)
@@ -513,7 +513,7 @@ namespace zstl
                 this->header_->parent_ = newnode;
                 this->header_->left_ = this->header_->right_ = newnode;
             }
-            else if (com(data, parent->data_))
+            else if (com(newnode->data_, parent->data_))
             {
                 parent->left_ = newnode;
                 // 更新最小值指针
