@@ -5,6 +5,21 @@
 
 namespace zstl
 {
+    // 键提取器：从 value_type 中获取 key
+    struct UKeyOfValue
+    {
+        template <typename K, typename V>
+        const K &operator()(const std::pair<const K, V> &kv) const
+        {
+            return kv.first;
+        }
+
+        template <typename K>
+        const K &operator()(const K &k) const
+        {
+            return k;
+        }
+    };
 
     // 哈希节点，用于链表存储冲突的元素
     template <typename T>
@@ -49,8 +64,8 @@ namespace zstl
         // 前置++：移动到下一个节点或下一个非空桶
         Self &operator++()
         {
-            HashFunc hash;
-            CompareFunc com;
+            UKeyOfValue kov_;
+            HashFunc hash_;
             if (node_ && node_->next_)
             {
                 node_ = node_->next_;
@@ -59,7 +74,7 @@ namespace zstl
             {
                 // 当前链表结束，查找下一个非空桶
                 size_t bucket_num = ht_->tables_.size();
-                size_t index = hash(com(node_->data_)) % bucket_num;
+                size_t index = hash_(kov_(node_->data_)) % bucket_num;
                 ++index;
                 while (index < bucket_num)
                 {
@@ -154,9 +169,9 @@ namespace zstl
             size_ = ht.size_;
         }
         // 赋值：交换
-        HashTable &operator=(const HashTable& ht)
+        HashTable &operator=(const HashTable &ht)
         {
-            if(this != &ht)
+            if (this != &ht)
             {
                 swap(ht);
             }
@@ -187,13 +202,11 @@ namespace zstl
             if (tables_.empty())
                 return iterator(nullptr, this);
 
-            Hash hash;
-            Compare com;
-            size_t index = hash(key) % tables_.size();
+            size_t index = hash_(key) % tables_.size();
             Node *cur = tables_[index];
             while (cur)
             {
-                if (com(cur->data_, key))
+                if (com_(kov_(cur->data_), key))
                     return iterator(cur, this);
                 cur = cur->next_;
             }
@@ -205,10 +218,8 @@ namespace zstl
         std::pair<iterator, bool> emplace_unique(Args &&...args)
         {
             T data(std::forward<Args>(args)...);
-            Hash hash;
-            Compare com;
             // 已存在则不插入
-            auto it_pair = find(com(data));
+            auto it_pair = find(kov_(data));
             if (it_pair != end())
                 return {it_pair, false};
 
@@ -218,7 +229,7 @@ namespace zstl
                 rehash();
             }
             // 插入到头部
-            size_t index = hash(com(data)) % tables_.size();
+            size_t index = hash_(kov_(data)) % tables_.size();
             Node *new_node = new Node(data);
             new_node->next_ = tables_[index];
             tables_[index] = new_node;
@@ -231,21 +242,19 @@ namespace zstl
         iterator emplace_duplicate(Args &&...args)
         {
             T data(std::forward<Args>(args)...);
-            Hash hash;
-            Compare com;
             // 负载因子 >= 1 时扩容
             if (size_ == tables_.size())
             {
                 rehash();
             }
             // 插入到头部
-            size_t index = hash(com(data)) % tables_.size();
+            size_t index = hash_(kov_(data)) % tables_.size();
             Node *new_node = new Node(data);
             Node *cur = tables_[index];
             Node *prev = nullptr; // 尾插
             while (cur)
             {
-                if (com(cur->data_, data))
+                if (com_(kov_(cur->data_), kov_(data)))
                 {
                     break;
                 }
@@ -278,9 +287,7 @@ namespace zstl
             }
 
             // 2. 如果存在
-            Hash hash;
-            Compare com;
-            size_t index = hash(com(*pos)) % tables_.size();
+            size_t index = hash_(kov_(*pos)) % tables_.size();
             const_iterator tmp = pos;
             ++tmp;
             iterator next_it(tmp.node_, this); // 找到下一个迭代器
@@ -338,9 +345,7 @@ namespace zstl
             // 为空直接返回
             if (tables_.empty())
                 return {iterator(nullptr, this), iterator(nullptr, this)};
-            Hash hash;
-            Compare com;
-            size_t index = hash(key) % tables_.size();
+            size_t index = hash_(key) % tables_.size();
             Node *cur = tables_[index];
             Node *first = nullptr;
             Node *last = nullptr;
@@ -348,7 +353,7 @@ namespace zstl
             // 在链表中查找所有匹配节点
             while (cur)
             {
-                if (com(cur->data_, key))
+                if (com_(kov_(cur->data_), key))
                 {
                     if (first == nullptr)
                     {
@@ -403,8 +408,6 @@ namespace zstl
             vector<Node *> new_tables;
             new_tables.resize(new_bucket);
 
-            Hash hash;
-            Compare com;
             // 转移节点
             for (size_t i = 0; i < old_bucket; ++i)
             {
@@ -412,7 +415,7 @@ namespace zstl
                 while (cur)
                 {
                     Node *next = cur->next_;
-                    size_t idx = hash(com(cur->data_)) % new_bucket;
+                    size_t idx = hash_(kov_(cur->data_)) % new_bucket;
                     cur->next_ = new_tables[idx];
                     new_tables[idx] = cur;
                     cur = next;
@@ -443,6 +446,9 @@ namespace zstl
     private:
         vector<Node *> tables_; // 桶数组
         size_t size_ = 0;       // 元素计数
+        UKeyOfValue kov_;        // 键提取器：从 value_type 中获取 key
+        Compare com_;           // 比较函数
+        Hash hash_;
     };
 
 } // namespace zstl

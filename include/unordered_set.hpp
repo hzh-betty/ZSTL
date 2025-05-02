@@ -5,12 +5,7 @@ namespace zstl
     template <typename K>
     struct USetCompare
     {
-        const K &operator()(const K &key)
-        {
-            return key;
-        }
-
-        bool operator()(const K &key1, const K &key2)
+        bool operator()(const K &key1, const K &key2)const
         {
             return key1 == key2;
         }
@@ -19,7 +14,7 @@ namespace zstl
     template <typename K>
     struct SetHashFunc
     {
-        size_t operator()(const K &key)
+        size_t operator()(const K &key)const
         {
             return key;
         }
@@ -27,7 +22,7 @@ namespace zstl
     template <>
     struct SetHashFunc<string>
     {
-        size_t operator()(const string &s)
+        size_t operator()(const string &s)const
         {
             size_t value = 0;
             for (auto ch : s)

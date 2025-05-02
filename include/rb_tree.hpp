@@ -11,6 +11,22 @@ namespace zstl
         BLACK // 黑色
     };
 
+    // 键提取器：从 value_type 中获取 key
+    struct KeyOfValue
+    {
+        template <typename K, typename V>
+        const K &operator()(const std::pair<const K, V> &kv) const
+        {
+            return kv.first;
+        }
+
+        template <typename K>
+        const K &operator()(const K &k) const
+        {
+            return k;
+        }
+    };
+
     // 红黑树的节点
     template <typename T>
     struct RBNode
@@ -164,11 +180,6 @@ namespace zstl
     class RBBalance
     {
         using Node = RBNode<T>;
-
-    public:
-        explicit RBBalance(Node *header) : header_(header)
-        {
-        }
 
     protected:
         // 右旋
@@ -444,7 +455,7 @@ namespace zstl
         }
 
     protected:
-        Node *header_;
+        Node *header_ = nullptr;
     };
 
     // 红黑树的基础操作
@@ -453,12 +464,6 @@ namespace zstl
     {
         using Node = RBNode<T>;
         using iterator = RBTreeIterator<T, T &, T *>;
-        using Balance = RBBalance<T>;
-
-    public:
-        explicit RBTreeBase(Node *header) : Balance(header)
-        {
-        }
 
     protected:
         template <bool Unique, typename... Args>
@@ -466,21 +471,20 @@ namespace zstl
         {
             Node *parent = this->header_;
             Node *cur = this->header_->parent_;
-            Compare com;
             T data(std::forward<Args>(args)...);
 
             // 定位插入点（重复时统一走右支）
             while (cur)
             {
                 parent = cur;
-                if (com(data, cur->data_))
+                if (this->com_(this->kov_(data), this->kov_(cur->data_)))
                     cur = cur->left_;
                 else
                 {
                     if constexpr (Unique) // —— 编译期分支
                     {
                         // 运行时判断是否重复
-                        if (!com(cur->data_, data))
+                        if (!this->com_(this->kov_(cur->data_), this->kov_(data)))
                             return std::pair<iterator, bool>{iterator(cur), false};
                     }
                     // 对于 Unique==false 或者 未重复，都走右支
@@ -506,14 +510,13 @@ namespace zstl
         // 插入链接节点
         void link_node(Node *newnode, Node *parent)
         {
-            Compare com;
             if (parent == this->header_)
             {
                 // 树原为空，新节点即根
                 this->header_->parent_ = newnode;
                 this->header_->left_ = this->header_->right_ = newnode;
             }
-            else if (com(newnode->data_, parent->data_))
+            else if (this->com_(this->kov_(newnode->data_), this->kov_(parent->data_)))
             {
                 parent->left_ = newnode;
                 // 更新最小值指针
@@ -593,6 +596,10 @@ namespace zstl
         {
             const_cast<L &>(a) = b;
         }
+
+    protected:
+        KeyOfValue kov_; // 键提取器：从 value_type 中获取 key
+        Compare com_;    // 比较函数
     };
 
     // 红黑树
@@ -600,7 +607,6 @@ namespace zstl
     class RBTree : public RBTreeBase<T, Compare>
     {
         using Node = RBNode<T>;
-        using Base = RBTreeBase<T, Compare>;
 
     public:
         // 迭代器
@@ -628,15 +634,13 @@ namespace zstl
     public:
         // 构造函数
         RBTree()
-            : Base(nullptr)
         {
-            // 初始化header__节点
+            // 初始化header节点
             init_header();
         }
 
         // 拷贝构造
         RBTree(const RBTree &t)
-            : Base(nullptr)
         {
             // 拷贝构造时重建header结构
             init_header();
@@ -659,9 +663,9 @@ namespace zstl
 
         // 移动构造函数
         RBTree(RBTree &&other)
-            : Base(other.header_),
-              size_(other.size_)
+            : size_(other.size_)
         {
+            this->header_ = other.header_;
             other.header_ = nullptr;
             other.size_ = 0;
         }
@@ -684,14 +688,13 @@ namespace zstl
         // lower_bound：第一个 ≥ k
         iterator lower_bound(const K &k)
         {
-            Compare com;
             // 根节点
             Node *cur = this->header_->parent_;
             // 候选，初始为 header_（即 end()）
             Node *res = this->header_;
             while (cur)
             {
-                if (com(cur->data_, k))
+                if (this->com_(this->kov_(cur->data_), k))
                 {
                     // cur->data_ < k: 下界不可能在左子树
                     cur = cur->right_;
@@ -708,12 +711,11 @@ namespace zstl
 
         const_iterator lower_bound(const K &k) const
         {
-            Compare com;
             Node *cur = this->header_->parent_;
             Node *res = this->header_;
             while (cur)
             {
-                if (com(cur->data_, k))
+                if (this->com_(this->kov_(cur->data_), k))
                 {
                     cur = cur->right_;
                 }
@@ -729,12 +731,11 @@ namespace zstl
         // upper_bound：第一个 > k
         iterator upper_bound(const K &k)
         {
-            Compare com;
             Node *cur = this->header_->parent_;
             Node *res = this->header_;
             while (cur)
             {
-                if (com(k, cur->data_))
+                if (this->com_(k, this->kov_(cur->data_)))
                 {
                     // k < cur->data_: cur 是一个 > k 的候选
                     res = cur;
@@ -751,12 +752,11 @@ namespace zstl
 
         const_iterator upper_bound(const K &k) const
         {
-            Compare com;
             Node *cur = this->header_->parent_;
             Node *res = this->header_;
             while (cur)
             {
-                if (com(k, cur->data_))
+                if (this->com_(k, this->kov_(cur->data_)))
                 {
                     res = cur;
                     cur = cur->left_;
@@ -774,7 +774,7 @@ namespace zstl
         std::pair<iterator, bool> emplace_unique(Args &&...args)
         {
             auto p = this->template insert_impl<true>(std::forward<Args>(args)...);
-            if(p.second == true)
+            if (p.second == true)
             {
                 ++size_;
             }
@@ -792,16 +792,15 @@ namespace zstl
         // 查找
         iterator find(const K &val) const
         {
-            Compare com;
             Node *cur = this->header_->parent_;
             while (cur)
             {
-                if (com(val, cur->data_))
+                if (this->com_(val, this->kov_(cur->data_)))
                 {
                     // 左子树中查找
                     cur = cur->left_;
                 }
-                else if (com(cur->data_, val))
+                else if (this->com_(this->kov_(cur->data_), val))
                 {
                     // 右子树中查找
                     cur = cur->right_;
@@ -818,7 +817,6 @@ namespace zstl
         // 删除接口
         iterator erase(const_iterator pos)
         {
-            Compare com;
             iterator next = pos.node_;
             ++next;
             // 1. 计算中序后继，作为返回值

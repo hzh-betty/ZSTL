@@ -2,34 +2,19 @@
 #include "assoc_tree.hpp"
 namespace zstl
 {
-    template <typename K, typename V>
+    template <typename K>
     struct MapCompare
     {
-        bool operator()(const std::pair<K, V> &kv1, const std::pair<K, V> &kv2)
+        bool operator()(const K &k1, const K &k2)const
         {
-            return kv1.first < kv2.first;
-        }
-
-        bool operator()(const K &key1, const std::pair<K, V> &kv2)
-        {
-            return key1 < kv2.first;
-        }
-
-        bool operator()(const std::pair<K, V> &kv1, const K &key2)
-        {
-            return kv1.first < key2;
-        }
-
-        const K &operator()(const std::pair<K, V> &kv1)
-        {
-            return kv1.first;
+            return k1 < k2;
         }
     };
 
-    template <typename K, typename V, typename Compare = MapCompare<K, V>>
+    template <typename K, typename V, typename Compare = MapCompare<K>>
     using map = assoc_tree<K, V, Compare, true>;
 
-    template <typename K, typename V, typename Compare = MapCompare<K, V>>
+    template <typename K, typename V, typename Compare = MapCompare<K>>
     using multimap = assoc_tree<K, V, Compare, false>;
 
 };

@@ -6,14 +6,9 @@ namespace zstl
     template <typename K>
     struct SetCompare
     {
-        bool operator()(const K &key1, const K &key2)
+        bool operator()(const K &key1, const K &key2)const
         {
             return key1 < key2;
-        }
-
-        const K &operator()(const K &key1)
-        {
-            return key1;
         }
     };
 

@@ -3,33 +3,19 @@
 #include "string.hpp"
 namespace zstl
 {
-    template <typename K, typename V>
+    template <typename K>
     struct UMapCompare
     {
-        bool operator()(const std::pair<K, V> &kv1, const std::pair<K, V> &kv2)
+        bool operator()(const K &k1, const K &k2)const
         {
-            return kv1.first == kv2.first;
-        }
-
-        bool operator()(const std::pair<K, V> &kv1, const K &key)
-        {
-            return kv1.first == key;
-        }
-
-        bool operator()(const K &key, const std::pair<K, V> &kv2)
-        {
-            return key == kv2.first;
-        }
-        const K &operator()(const std::pair<K, V> &kv)
-        {
-            return kv.first;
+            return k1 == k2;
         }
     };
 
     template <typename K>
     struct MapHashFunc
     {
-        size_t operator()(const K &key)
+        size_t operator()(const K &key)const
         {
             return key;
         }
@@ -37,7 +23,7 @@ namespace zstl
     template <>
     struct MapHashFunc<string>
     {
-        size_t operator()(const string &s)
+        size_t operator()(const string &s)const
         {
             size_t value = 0;
             for (auto ch : s)
@@ -47,9 +33,9 @@ namespace zstl
             return value;
         }
     };
-    template <typename K, typename V, typename Hash = MapHashFunc<K>, typename Compare = UMapCompare<K, V>>
+    template <typename K, typename V, typename Hash = MapHashFunc<K>, typename Compare = UMapCompare<K>>
     using unordered_map = assoc_hash<K, V, Hash, Compare, true>;
 
-    template <typename K, typename V, typename Hash = MapHashFunc<K>, typename Compare = UMapCompare<K, V>>
+    template <typename K, typename V, typename Hash = MapHashFunc<K>, typename Compare = UMapCompare<K>>
     using unordered_multimap = assoc_hash<K, V, Hash, Compare, false>;
 };
