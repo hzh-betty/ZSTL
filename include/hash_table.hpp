@@ -200,68 +200,6 @@ namespace zstl
             return iterator(nullptr, this);
         }
 
-        // 插入元素，返回迭代器与是否成功
-        std::pair<iterator, bool> insert_unique(const T &data)
-        {
-            Hash hash;
-            Compare com;
-            // 已存在则不插入
-            auto it_pair = find(com(data));
-            if (it_pair != end())
-                return {it_pair, false};
-
-            // 负载因子 >= 1 时扩容
-            if (size_ == tables_.size())
-            {
-                rehash();
-            }
-            // 插入到头部
-            size_t index = hash(com(data)) % tables_.size();
-            Node *new_node = new Node(data);
-            new_node->next_ = tables_[index];
-            tables_[index] = new_node;
-            ++size_;
-            return {iterator(new_node, this), true};
-        }
-        iterator insert_duplicate(const T &data)
-        {
-            Hash hash;
-            Compare com;
-            // 负载因子 >= 1 时扩容
-            if (size_ == tables_.size())
-            {
-                rehash();
-            }
-            // 插入到头部
-            size_t index = hash(com(data)) % tables_.size();
-            Node *new_node = new Node(data);
-            Node *cur = tables_[index];
-            Node *prev = nullptr; // 尾插
-            while (cur)
-            {
-                if (com(cur->data_, data))
-                {
-                    break;
-                }
-                prev = cur;
-                cur = cur->next_;
-            }
-
-            if (prev == nullptr)
-            {
-                new_node->next_ = tables_[index];
-                tables_[index] = new_node;
-            }
-            else
-            {
-                prev->next_ = new_node;
-                new_node->next_ = cur;
-            }
-
-            ++size_;
-            return iterator(new_node, this);
-        }
-
         // emplace 接口（唯一插入）
         template <typename... Args>
         std::pair<iterator, bool> emplace_unique(Args &&...args)

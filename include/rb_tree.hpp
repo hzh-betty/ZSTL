@@ -789,18 +789,6 @@ namespace zstl
             return this->template insert_impl<false>(std::forward<Args>(args)...);
         }
 
-        // 插入节点--不支持重复插入
-        std::pair<iterator, bool> insert_unique(const T &data)
-        {
-            return this->emplace_unique(data);
-        }
-
-        // 插入节点--支持重复插入
-        iterator insert_duplicate(const T &data)
-        {
-            return this->emplace_duplicate(data);
-        }
-
         // 查找
         iterator find(const K &val) const
         {

@@ -155,14 +155,7 @@ namespace zstl
         // 传统插入方法
         auto insert(const value_type &v)
         {
-            if constexpr (Unique)
-            {
-                return tree_.insert_unique(v);
-            }
-            else
-            {
-                return tree_.insert_duplicate(v);
-            }
+            return emplace(v);
         }
 
         // 只在 value_type 可由 P&& 构造时才参与重载，等价于 emplace 的完美转发
@@ -170,14 +163,7 @@ namespace zstl
                   typename = std::enable_if_t<std::is_constructible_v<value_type, P &&>>>
         auto insert(P &&x)
         {
-            if constexpr (Unique)
-            {
-                return tree_.emplace_unique(std::forward<P>(x));
-            }
-            else
-            {
-                return tree_.emplace_duplicate(std::forward<P>(x));
-            }
+            return emplace(std::forward<P>(x));
         }
 
         /**
@@ -190,7 +176,7 @@ namespace zstl
         std::enable_if_t<!std::is_same_v<M, tree_null_type> && U, M &>
         operator[](const Key &key)
         {
-            auto [it, inserted] = tree_.insert_unique({key, M()});
+            auto [it, inserted] = tree_.emplace_unique(key, M());
             return it->second;
         }
 
