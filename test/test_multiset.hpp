@@ -226,7 +226,7 @@ namespace zstl
         EXPECT_EQ(ms.count(3), 1);
     }
 
-    TEST(MultisetTest, Emplace)
+    TEST_F(MultiSetTest, Emplace)
     {
         multiset<int> ms;
         auto it = ms.emplace(42);

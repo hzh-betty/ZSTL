@@ -535,6 +535,20 @@ namespace zstl
         // 删除节点
         void delete_node(Node *del, Node *delP)
         {
+            // 更新最大值与最小值
+            if(del == this->header_->left_)
+            {
+                iterator next(del);
+                ++next;
+                this->header_->left_ = next.node_;
+            }
+            if(del == this->header_->right_)
+            {
+                iterator prev(del);
+                --prev;
+                this->header_->right_ = prev.node_;
+            }
+
             // 根节点被删：直接将唯一子节点提到根
             if (delP == this->header_)
             {
@@ -578,6 +592,7 @@ namespace zstl
                         del->left_->parent_ = delP;
                 }
             }
+
             delete del; // 实际删除结点
         }
 
@@ -847,10 +862,7 @@ namespace zstl
             this->delete_node(del_node, del_node_parent); // 实际摘除节点并释放
             --size_;
 
-            // 4. 更新 header 的最小/最大指针（若有）
-            adjust_header_pointers(this->header_->parent_);
-
-            // 5. 返回先前保存的后继
+            // 4. 返回先前保存的后继
             return next;
         }
         iterator erase(const_iterator first, const_iterator last)

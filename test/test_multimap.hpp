@@ -173,7 +173,7 @@ namespace zstl
         EXPECT_EQ(it->second, 30);
     }
 
-    TEST(MultimapTest, Emplace)
+    TEST(MultiMapTest, Emplace)
     {
         multimap<int, int> mm;
         auto it = mm.emplace(1, 100);

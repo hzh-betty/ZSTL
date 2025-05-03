@@ -95,7 +95,6 @@ namespace zstl
     public:
         // 类型别名定义
         using char_type = CharT;
-        using traits_type = Traits;
         using size_type = size_t;
         using iterator = CharT *;
         using const_iterator = const CharT *;
@@ -133,7 +132,12 @@ namespace zstl
             o.size_ = o.capacity_ = 0; // 源对象尺寸清零
         }
 
-        ~basic_string() { delete[] str_; } // 析构时释放内存
+        ~basic_string()
+        {
+            size_ = capacity_ = 0;
+            delete[] str_;
+            str_ = nullptr;
+        } // 析构时释放内存
 
         // 拷贝赋值运算符：使用拷贝交换范式
         basic_string &operator=(const basic_string &o)
@@ -342,7 +346,7 @@ namespace zstl
             if (len == npos || pos + len > size_) // 处理默认长度
                 len = size_ - pos;
 
-            r.reserve(len);                        // 预分配内存
+            r.reserve(len + 1);                    // 预分配内存
             Traits::copy(r.str_, str_ + pos, len); // 拷贝内容
             r.size_ = len;                         // 设置尺寸
             r.str_[len] = CharT(0);                // 终止符
@@ -384,9 +388,9 @@ namespace zstl
         }
 
     private:
-        CharT *str_ = nullptr;   // 数据存储指针
-        size_type size_ = 0;     // 当前元素数量
-        size_type capacity_ = 0; // 当前分配容量
+        char_type *str_ = nullptr; // 数据存储指针
+        size_type size_ = 0;       // 当前元素数量
+        size_type capacity_ = 0;   // 当前分配容量
     };
     using string = basic_string<char>;
     using wstring = basic_string<wchar_t>;

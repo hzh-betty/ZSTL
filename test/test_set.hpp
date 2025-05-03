@@ -150,6 +150,7 @@ namespace zstl
             EXPECT_EQ(s.erase(i), 1);
         }
         EXPECT_EQ(s.size(), 500u);
+        
         // 验证偶数已删除，奇数仍存在
         for (int i = 0; i < N; ++i)
         {
@@ -163,6 +164,9 @@ namespace zstl
                 EXPECT_NE(iter, s.end());
             }
         }
+
+        EXPECT_EQ(*s.begin(), 1);
+        EXPECT_EQ(*(--s.end()), 999);
     }
 
     // 测试拷贝构造函数
