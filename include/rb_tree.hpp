@@ -31,20 +31,17 @@ namespace zstl
     template <typename T>
     struct RBNode
     {
-        RBNode(const T &data, Color col = Color::RED)
-            : data_(data), col_(col) // 默认为红节点
+        // 完美转发构造函数
+        template <typename... Args>
+        RBNode(Args &&...args) : data_(std::forward<Args>(args)...)
         {
         }
 
-        RBNode(T &&data, Color col = Color::RED)
-            : data_(std::move(data)), col_(col) // 默认为红节点
-        {
-        }
         RBNode<T> *left_ = nullptr;   // 左子树
         RBNode<T> *right_ = nullptr;  // 右子树
         RBNode<T> *parent_ = nullptr; // 父节点
         T data_;                      // 键值
-        Color col_;                   // 颜色
+        Color col_ = Color::RED;      // 颜色
     };
 
     // 红黑树的迭代器
@@ -459,13 +456,14 @@ namespace zstl
     };
 
     // 红黑树的基础操作
-    template <typename T, typename Compare>
+    template <typename K, typename T, typename Compare>
     class RBTreeBase : public RBBalance<T>
     {
         using Node = RBNode<T>;
         using iterator = RBTreeIterator<T, T &, T *>;
 
     protected:
+        // 辅助插入节点
         template <bool Unique, typename... Args>
         auto insert_impl(Args &&...args)
         {
@@ -507,6 +505,58 @@ namespace zstl
                 return iterator(newnode);
         }
 
+        Node *erase_impl(Node *target, Node *successor)
+        {
+            // 1. 定位待真正删除的节点 del and its parent delP
+            Node *del = nullptr, *delP = nullptr;
+            if (!target->left_ || !target->right_)
+            {
+                // 度0或1：直接删除 target
+                del = target;
+                delP = target->parent_;
+            }
+            else
+            {
+                // 情况 B/双子：交换数据后，将后继节点（必为半叶）设为删除对象
+                this->copy_delete_node(target->data_, successor->data_);
+                del = successor;
+                delP = successor->parent_;
+                successor = target;
+            }
+
+            // 2. 红黑树删除调整
+            Node *del_node = del;
+            Node *del_node_parent = delP;
+            this->adjust_erase(del, delP);                // 恢复红黑性质
+            this->delete_node(del_node, del_node_parent); // 实际摘除节点并释放
+            return successor;
+        }
+
+        // 查找节点
+        Node *find_impl(const K &val) const
+        {
+            Node *cur = this->header_->parent_;
+            while (cur)
+            {
+                if (this->com_(val, this->kov_(cur->data_)))
+                {
+                    // 左子树中查找
+                    cur = cur->left_;
+                }
+                else if (this->com_(this->kov_(cur->data_), val))
+                {
+                    // 右子树中查找
+                    cur = cur->right_;
+                }
+                else
+                {
+                    // 找到了
+                    return cur;
+                }
+            }
+            return this->header_;
+        }
+
         // 插入链接节点
         void link_node(Node *newnode, Node *parent)
         {
@@ -536,13 +586,13 @@ namespace zstl
         void delete_node(Node *del, Node *delP)
         {
             // 更新最大值与最小值
-            if(del == this->header_->left_)
+            if (del == this->header_->left_)
             {
                 iterator next(del);
                 ++next;
                 this->header_->left_ = next.node_;
             }
-            if(del == this->header_->right_)
+            if (del == this->header_->right_)
             {
                 iterator prev(del);
                 --prev;
@@ -619,7 +669,7 @@ namespace zstl
 
     // 红黑树
     template <typename K, typename T, typename Compare>
-    class RBTree : public RBTreeBase<T, Compare>
+    class RBTree : public RBTreeBase<K, T, Compare>
     {
         using Node = RBNode<T>;
 
@@ -807,26 +857,7 @@ namespace zstl
         // 查找
         iterator find(const K &val) const
         {
-            Node *cur = this->header_->parent_;
-            while (cur)
-            {
-                if (this->com_(val, this->kov_(cur->data_)))
-                {
-                    // 左子树中查找
-                    cur = cur->left_;
-                }
-                else if (this->com_(this->kov_(cur->data_), val))
-                {
-                    // 右子树中查找
-                    cur = cur->right_;
-                }
-                else
-                {
-                    // 找到了
-                    return iterator(cur);
-                }
-            }
-            return iterator(this->header_);
+            return this->find_impl(val);
         }
 
         // 删除接口
@@ -834,36 +865,12 @@ namespace zstl
         {
             iterator next = pos.node_;
             ++next;
-            // 1. 计算中序后继，作为返回值
+            // 计算中序后继，作为返回值
             Node *target = pos.node_; // 待删除节点
             Node *successor = next.node_;
-
-            // 2. 定位待真正删除的节点 del and its parent delP
-            Node *del = nullptr, *delP = nullptr;
-            if (!target->left_ || !target->right_)
-            {
-                // 度0或1：直接删除 target
-                del = target;
-                delP = target->parent_;
-            }
-            else
-            {
-                // 情况 B/双子：交换数据后，将后继节点（必为半叶）设为删除对象
-                this->copy_delete_node(target->data_, successor->data_);
-                del = successor;
-                delP = successor->parent_;
-                next = iterator(pos.node_);
-            }
-
-            // 3. 红黑树删除调整
-            Node *del_node = del;
-            Node *del_node_parent = delP;
-            this->adjust_erase(del, delP);                // 恢复红黑性质
-            this->delete_node(del_node, del_node_parent); // 实际摘除节点并释放
+            successor = this->erase_impl(target, successor);
             --size_;
-
-            // 4. 返回先前保存的后继
-            return next;
+            return successor;
         }
         iterator erase(const_iterator first, const_iterator last)
         {

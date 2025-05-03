@@ -68,7 +68,7 @@ namespace zstl
         // 赋值重载
         vector<T> &operator=(const vector<T> &v)
         {
-            if(this != &v)
+            if (this != &v)
             {
                 vector<T> tmp(v);
                 swap(tmp);
@@ -108,8 +108,8 @@ namespace zstl
         }
 
         // 移动构造
-        vector(vector&& v)
-        :start_(v.start_),finish_(v.finish_),end_of_storage_(v.end_of_storage_)
+        vector(vector &&v)
+            : start_(v.start_), finish_(v.finish_), end_of_storage_(v.end_of_storage_)
         {
             v.start_ = v.finish_ = v.end_of_storage_ = nullptr;
         }
@@ -126,13 +126,6 @@ namespace zstl
                 v.start_ = v.finish_ = v.end_of_storage_ = nullptr;
             }
             return *this;
-        }
-
-        // emplace_back 接口
-        template <typename... Args>
-        void emplace_back(Args &&...args)
-        {
-            insert(end(), T(std::forward<Args>(args)...));
         }
 
         // 返回当前 vector 中存储的元素个数
@@ -211,6 +204,19 @@ namespace zstl
             --finish_;
         }
 
+        // emplace_back 接口
+        template <typename... Args>
+        void emplace_back(Args &&...args)
+        {
+            if (finish_ == end_of_storage_)
+            {
+                reserve(capacity() == 0 ?  : capacity() * 2);
+            }
+            // 在 finish_ 位置原地构造元素
+            new (finish_) T(std::forward<Args>(args)...);
+            ++finish_;
+        }
+
         // 在指定位置 pos 插入元素 val
         iterator insert(iterator pos, const T &val)
         {
@@ -238,33 +244,7 @@ namespace zstl
             ++finish_;
             return pos;
         }
-        // 在指定位置 pos 插入右值元素 val
-        iterator insert(iterator pos, T &&val)
-        {
-            assert(pos >= start_);
-            assert(pos <= finish_);
 
-            // 如果当前内存不足，则先扩容并重新定位 pos
-            if (finish_ == end_of_storage_)
-            {
-                size_t len = pos - start_;
-                size_t new_size = capacity() == 0 ? 4 : capacity() * 2;
-                reserve(new_size);
-                pos = start_ + len;
-            }
-
-            // 将 pos 后的元素全部向后移动一位，空出插入位置
-            iterator end = finish_;
-            while (end > pos)
-            {
-                *end = std::move(*(end - 1));
-                --end;
-            }
-            // 插入新元素
-            *end = std::move(val);
-            ++finish_;
-            return pos;
-        }
         // 删除指定位置 pos 的元素，并返回删除位置
         iterator erase(iterator pos)
         {

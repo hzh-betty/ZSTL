@@ -26,12 +26,14 @@ namespace zstl
     struct HashNode
     {
         T data_;         // 存储的数据
-        HashNode *next_; // 指向下一个节点
+        HashNode *next_ = nullptr; // 指向下一个节点
 
-        HashNode(const T &data)
-            : data_(data), next_(nullptr) {}
-        HashNode(T &&data)
-            : data_(std::move(data)), next_(nullptr) {}
+        // 完美转发构造函数
+        template <typename... Args>
+        HashNode(Args &&...args)
+        :data_(std::forward<Args>(args)...)
+        {
+        }
     };
 
     // 前向声明哈希表模板
@@ -230,7 +232,7 @@ namespace zstl
             }
             // 插入到头部
             size_t index = hash_(kov_(data)) % tables_.size();
-            Node *new_node = new Node(data);
+            Node *new_node = new Node(std::move(data));
             new_node->next_ = tables_[index];
             tables_[index] = new_node;
             ++size_;
@@ -249,7 +251,7 @@ namespace zstl
             }
             // 插入到头部
             size_t index = hash_(kov_(data)) % tables_.size();
-            Node *new_node = new Node(data);
+            Node *new_node = new Node(std::move(data));
             Node *cur = tables_[index];
             Node *prev = nullptr; // 尾插
             while (cur)
@@ -446,7 +448,7 @@ namespace zstl
     private:
         vector<Node *> tables_; // 桶数组
         size_t size_ = 0;       // 元素计数
-        UKeyOfValue kov_;        // 键提取器：从 value_type 中获取 key
+        UKeyOfValue kov_;       // 键提取器：从 value_type 中获取 key
         Compare com_;           // 比较函数
         Hash hash_;
     };

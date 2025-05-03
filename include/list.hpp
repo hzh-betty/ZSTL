@@ -8,16 +8,13 @@ namespace zstl
     template <typename T>
     struct ListNode
     {
-        // 构造函数，使用传入的值初始化节点数据，默认使用T()构造默认值
-        ListNode(const T &val = T())
-            : data_(val), prev_(nullptr), next_(nullptr)
-        {
-        }
-        // 右值引用构造函数
-        ListNode(T &&val)
-            : data_(std::move(val)), prev_(nullptr), next_(nullptr)
-        {
-        }
+
+        // 完美转发构造函数
+        template <typename... Args>
+        ListNode(Args &&...args) : 
+        data_(std::forward<Args>(args)...), prev_(nullptr), next_(nullptr)
+        {}
+       
         T data_;            // 节点存储的数据
         ListNode<T> *prev_; // 指向前一个节点的指针
         ListNode<T> *next_; // 指向后一个节点的指针
@@ -137,7 +134,7 @@ namespace zstl
         // 初始化空链表，构造头节点，并使链表空（环状连接头节点）
         void empty_init()
         {
-            head_ = new Node; // 构造头节点，注意头节点不存数据
+            head_ = new Node(T()); // 构造头节点，注意头节点不存数据
             head_->next_ = head_;
             head_->prev_ = head_;
             size_ = 0; // 初始时链表中无数据节点
@@ -207,25 +204,15 @@ namespace zstl
         template <typename... Args>
         void emplace_back(Args &&...args)
         {
-            insert(end(), T(std::forward<Args>(args)...));
-        }
-        // 在迭代器 it 之前插入右值元素 val，并返回新节点的迭代器
-        iterator insert(iterator it, T &&val)
-        {
-            // 1. 构造新节点，使用 std::move 将右值传递给节点构造函数
-            Node *cur = it.node_;
-            Node *prev_node = cur->prev_;
-            Node *new_node = new Node(std::move(val));
-
-            // 2. 链接各节点：将新节点插入到 prev_node 和 cur 之间
+            Node *prev_node = head_->prev_;
+            Node *new_node = new Node(std::forward<Args>(args)...);
             prev_node->next_ = new_node;
-            cur->prev_ = new_node;
+            head_->prev_ = new_node;
             new_node->prev_ = prev_node;
-            new_node->next_ = cur;
+            new_node->next_ = head_;
             ++size_;
-
-            return new_node;
         }
+
         // 在迭代器 it 之前插入值为 val 的新节点，并返回新节点的迭代器
         iterator insert(iterator it, const T &val)
         {
