@@ -4,58 +4,98 @@
 
 namespace zstl
 {
+    // 前置声明
+    template <typename T>
+    struct ListNodeBase;
+    template <typename T>
+    struct ListNode;
+
+    // 节点特性萃取
+    template <typename T>
+    struct node_traits
+    {
+        using base_ptr = ListNodeBase<T> *;
+        using node_ptr = ListNode<T> *;
+    };
+
+    /* 链表基节点（不包含数据）*/
+    template <typename T>
+    struct ListNodeBase
+    {
+        using base_ptr = typename node_traits<T>::base_ptr;
+        using node_ptr = typename node_traits<T>::node_ptr;
+
+        base_ptr prev_;
+        base_ptr next_;
+
+        ListNodeBase()
+            : prev_(this), next_(this)
+        {
+        }
+
+        // 转换为节点数据指针
+        node_ptr as_node()
+        {
+            return static_cast<node_ptr>(this);
+        }
+    };
+
     /*带头双向链表的节点模板*/
     template <typename T>
-    struct ListNode
+    struct ListNode : public ListNodeBase<T>
     {
+        using base_ptr = typename node_traits<T>::base_ptr;
 
         // 完美转发构造函数
         template <typename... Args>
-        ListNode(Args &&...args) : 
-        data_(std::forward<Args>(args)...), prev_(nullptr), next_(nullptr)
-        {}
-       
-        T data_;            // 节点存储的数据
-        ListNode<T> *prev_; // 指向前一个节点的指针
-        ListNode<T> *next_; // 指向后一个节点的指针
+        ListNode(Args &&...args) : data_(std::forward<Args>(args)...)
+        {
+        }
+
+        // 转换为基节点指针
+        base_ptr as_base()
+        {
+            return static_cast<base_ptr>(this);
+        }
+
+        T data_; // 节点存储的数据
     };
 
     /*封装为迭代器，根据数据类型、引用类型和指针类型实例化*/
     template <typename T, typename Ref, typename Ptr>
     struct ListIterator
     {
-        using Node = ListNode<T>;               // 节点类型
+        using base_ptr = typename node_traits<T>::base_ptr;
+        using node_ptr = typename node_traits<T>::node_ptr;
         using Self = ListIterator<T, Ref, Ptr>; // 当前迭代器类型
 
-        Node *node_; // 当前迭代器指向的节点
+        // 转换构造函数
+        ListIterator(const ListIterator<T, T &, T *> &rhs)
+            : base_(rhs.base_) {}
+
+        base_ptr base_; // 当前迭代器指向的节点
 
         // 构造函数，传入节点指针
-        ListIterator(Node *node) : node_(node)
-        {
-        }
-
-        // 拷贝构造函数
-        ListIterator(const Self &s)
-            : node_(s.node_)
+        ListIterator(base_ptr node) : base_(node)
         {
         }
 
         // 重载解引用运算符，返回节点存储的数据
         Ref operator*()
         {
-            return node_->data_;
+            return base_->as_node()->data_;
         }
 
         // 重载成员访问运算符，返回数据的指针
         Ptr operator->()
         {
-            return &node_->data_;
+            return &(base_->as_node()->data_);
         }
 
         // 前置++运算符，迭代器前移到下一个节点
         Self &operator++()
         {
-            node_ = node_->next_;
+            base_ = base_->next_;
             return *this;
         }
 
@@ -63,14 +103,14 @@ namespace zstl
         Self operator++(int)
         {
             Self self(*this);
-            node_ = node_->next_;
+            base_ = base_->next_;
             return self;
         }
 
         // 前置--运算符，迭代器后移到上一个节点
         Self &operator--()
         {
-            node_ = node_->prev_;
+            base_ = base_->prev_;
             return *this;
         }
 
@@ -78,20 +118,20 @@ namespace zstl
         Self operator--(int)
         {
             Self self(*this);
-            node_ = node_->prev_;
+            base_ = base_->prev_;
             return self;
         }
 
         // 重载相等运算符，判断两个迭代器是否指向同一节点
         bool operator==(const Self &s) const
         {
-            return node_ == s.node_;
+            return base_ == s.base_;
         }
 
         // 重载不等运算符，判断两个迭代器是否不指向同一节点
         bool operator!=(const Self &s) const
         {
-            return node_ != s.node_;
+            return base_ != s.base_;
         }
     };
 
@@ -100,7 +140,8 @@ namespace zstl
     class list
     {
     private:
-        using Node = ListNode<T>;
+        using base_ptr = typename node_traits<T>::base_ptr;
+        using node_ptr = typename node_traits<T>::node_ptr;
 
     public:
         using iterator = ListIterator<T, T &, T *>;             // 普通迭代器类型
@@ -131,19 +172,27 @@ namespace zstl
         }
 
     public:
-        // 初始化空链表，构造头节点，并使链表空（环状连接头节点）
-        void empty_init()
-        {
-            head_ = new Node(T()); // 构造头节点，注意头节点不存数据
-            head_->next_ = head_;
-            head_->prev_ = head_;
-            size_ = 0; // 初始时链表中无数据节点
-        }
-
         // 默认构造函数
         list()
         {
             empty_init();
+        }
+
+        list(size_t n, const T &val = T())
+        {
+            fill_init(n, val);
+        }
+
+        template <typename InputIter>
+        list(InputIter first, InputIter last)
+        {
+            range_init(first, last);
+        }
+
+        // initializer_list 构造函数
+        list(std::initializer_list<T> il)
+        {
+            range_init(il.begin(), il.end());
         }
 
         // 拷贝构造函数，将传入的链表中的每个元素插入到新链表中
@@ -154,15 +203,6 @@ namespace zstl
             for (auto &it : other)
             {
                 push_back(it);
-            }
-        }
-        // initializer_list 构造函数
-        list(std::initializer_list<T> il)
-        {
-            empty_init();
-            for (const auto &val : il)
-            {
-                push_back(val);
             }
         }
 
@@ -204,37 +244,27 @@ namespace zstl
         template <typename... Args>
         void emplace_back(Args &&...args)
         {
-            Node *prev_node = head_->prev_;
-            Node *new_node = new Node(std::forward<Args>(args)...);
-            prev_node->next_ = new_node;
-            head_->prev_ = new_node;
-            new_node->prev_ = prev_node;
-            new_node->next_ = head_;
-            ++size_;
+            insert_node(end(), std::forward<Args>(args)...);
         }
 
         // 在迭代器 it 之前插入值为 val 的新节点，并返回新节点的迭代器
-        iterator insert(iterator it, const T &val)
+        iterator insert(iterator pos, const T &val)
         {
-            // 1. 构造新节点
-            Node *cur = it.node_;
-            Node *prev_node = cur->prev_;
-            Node *new_node = new Node(val);
+            // 1. 创建新节点
+            node_ptr new_node = create_node(val);
 
-            // 2. 链接各节点：将新节点插入到 prev_node 和 cur 之间
-            prev_node->next_ = new_node;
-            cur->prev_ = new_node;
-            new_node->prev_ = prev_node;
-            new_node->next_ = cur;
+            // 2. 将节点链接到链表
+            link_nodes(pos.base_, new_node->as_base(), new_node->as_base());
+
+            // 3. 更新大小并返回迭代器
             ++size_;
-
-            return new_node;
+            return iterator(new_node->as_base());
         }
 
         // 在链表尾部添加新元素
         void push_back(const T &val)
         {
-            insert(end(), val);
+            emplace_back(val);
         }
 
         // 在链表头部添加新元素
@@ -244,27 +274,22 @@ namespace zstl
         }
 
         // 删除迭代器 pos 指向的节点，并返回下一个节点的迭代器
-        iterator erase(iterator pos)
+        iterator erase(const_iterator pos)
         {
             // 1. 删除前检查，确保 pos 不是尾节点（头节点）
-            assert(pos != end());
+            assert(pos.base_ != head_);
             // 获取被删除节点前后的节点
-            Node *prev_node = pos.node_->prev_;
-            Node *next_node = pos.node_->next_;
-            // 删除当前节点
-            delete pos.node_;
+            base_ptr prev_node = pos.base_->prev_;
+            base_ptr next_node = pos.base_->next_;
 
             // 2. 重新链接前后节点
             prev_node->next_ = next_node;
             next_node->prev_ = prev_node;
-            --size_;
-            return next_node;
-        }
 
-        // 返回链表中存储的元素数量
-        size_t size() const
-        {
-            return size_;
+            // 3. 删除节点
+            destory_node(static_cast<node_ptr>(pos.base_));
+            --size_;
+            return iterator(next_node);
         }
 
         // 删除尾部元素
@@ -322,14 +347,11 @@ namespace zstl
         // 清空链表中所有元素
         void clear()
         {
-            // 循环删除所有非头节点
-            for (iterator iter = begin(); iter != end();)
+            while (!empty())
             {
-                // erase 返回下一个节点，不需要再递增迭代器
-                iter = erase(iter);
+                pop_front();
             }
         }
-
         // 交换两个链表的内部数据
         void swap(list<T> &it)
         {
@@ -337,6 +359,15 @@ namespace zstl
             std::swap(size_, it.size_);
         }
 
+        bool empty() const
+        {
+            return size_ == 0;
+        }
+
+        size_t size() const
+        {
+            return size_;
+        }
         // 析构函数，清空链表并释放头节点内存
         ~list()
         {
@@ -349,7 +380,68 @@ namespace zstl
         }
 
     private:
-        Node *head_;  // 链表的头节点（不存储有效数据）
-        size_t size_; // 链表有效节点的数量
+        // 初始化空链表，构造头节点，并使链表空（环状连接头节点）
+        void empty_init()
+        {
+            head_ = new ListNodeBase<T>(); // 构造头节点，注意头节点不存数据
+            head_->next_ = head_;
+            head_->prev_ = head_;
+            size_ = 0; // 初始时链表中无数据节点
+        }
+
+        void fill_init(size_t n, const T &val)
+        {
+            empty_init();
+            while (n--)
+            {
+                emplace_back(val);
+            }
+        }
+
+        template <typename InputIter>
+        void range_init(InputIter first, InputIter last)
+        {
+            empty_init();
+            for (; first != last; ++first)
+            {
+                emplace_back(*first);
+            }
+        }
+
+        // 制造节点
+        template <typename... Args>
+        node_ptr create_node(Args &&...args)
+        {
+            return new ListNode<T>(std::forward<Args>(args)...);
+        }
+
+        // 销毁节点
+        void destory_node(node_ptr p)
+        {
+            delete p;
+        }
+
+        // 在pos之前链接节点
+        void link_nodes(base_ptr pos, base_ptr first, base_ptr last)
+        {
+            first->prev_ = pos->prev_;
+            last->next_ = pos;
+            pos->prev_->next_ = first;
+            pos->prev_ = last;
+        }
+
+        // 在pos之前插入节点
+        template <typename... Args>
+        iterator insert_node(const_iterator pos, Args &&...args)
+        {
+            node_ptr new_node = create_node(std::forward<Args>(args)...);
+            link_nodes(pos.base_, new_node->as_base(), new_node->as_base());
+            ++size_;
+            return iterator(new_node);
+        }
+
+    private:
+        base_ptr head_; // 链表的头节点（不存储有效数据）
+        size_t size_;   // 链表有效节点的数量
     };
 };

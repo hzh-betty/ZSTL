@@ -5,7 +5,6 @@
 
 namespace zstl
 {
-    // 双向迭代器，用于在 Deque 中前后遍历元素
     // T: 元素类型；Ptr: 指针类型；Ref: 引用类型；BufferSize: 每个缓冲区的大小
     template <typename T, typename Ptr, typename Ref, size_t BufferSize>
     struct DequeIterator

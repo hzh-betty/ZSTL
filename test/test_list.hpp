@@ -9,7 +9,7 @@ namespace zstl
         list<int> li;
         EXPECT_EQ(li.size(), 0);
         // 当链表为空时，begin() 返回的迭代器应和 end() 一致（指向头节点）
-        EXPECT_EQ(li.begin().node_, li.end().node_);
+        EXPECT_EQ(li.begin().base_, li.end().base_);
     }
 
     // 测试 push_back 和 push_front 成员函数
@@ -116,7 +116,7 @@ namespace zstl
         li.clear();
         EXPECT_EQ(li.size(), 0);
         // 列表为空时，begin() 与 end() 应一致
-        EXPECT_EQ(li.begin().node_, li.end().node_);
+        EXPECT_EQ(li.begin().base_, li.end().base_);
     }
 
     // 测试复制构造函数（深拷贝）
