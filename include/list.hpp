@@ -177,7 +177,20 @@ namespace zstl
         {
             empty_init();
         }
-
+        // 析构函数，清空链表并释放头节点内存
+        ~list()
+        {
+            if (head_ != nullptr)
+            {
+                clear();
+                delete head_;
+                head_ = nullptr;
+            }
+        }
+        list(int n, const T &val = T())
+        {
+            fill_init(n, val);
+        }
         list(size_t n, const T &val = T())
         {
             fill_init(n, val);
@@ -247,7 +260,7 @@ namespace zstl
             insert_node(end(), std::forward<Args>(args)...);
         }
 
-        // 在迭代器 it 之前插入值为 val 的新节点，并返回新节点的迭代器
+        // 在迭代器 pos 之前插入值为 val 的新节点，并返回新节点的迭代器
         iterator insert(iterator pos, const T &val)
         {
             // 1. 创建新节点
@@ -367,16 +380,6 @@ namespace zstl
         size_t size() const
         {
             return size_;
-        }
-        // 析构函数，清空链表并释放头节点内存
-        ~list()
-        {
-            if (head_ != nullptr)
-            {
-                clear();
-                delete head_;
-                head_ = nullptr;
-            }
         }
 
     private:

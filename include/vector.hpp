@@ -7,6 +7,8 @@ namespace zstl
     template <typename T>
     class vector
     {
+        static_assert(!std::is_same<bool, T>::value, "vector<bool> is abandoned in mystl");
+
     public:
         // 用原始指针模拟迭代器
         using iterator = T *;
@@ -210,7 +212,7 @@ namespace zstl
         {
             if (finish_ == end_of_storage_)
             {
-                reserve(capacity() == 0 ?  : capacity() * 2);
+                reserve(capacity() == 0 ?: capacity() * 2);
             }
             // 在 finish_ 位置原地构造元素
             new (finish_) T(std::forward<Args>(args)...);

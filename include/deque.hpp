@@ -261,12 +261,52 @@ namespace zstl
             }
             return *this;
         }
+        
+        /** 在前端原地构造 */
+        template <typename... Args>
+        void emplace_front(Args &&...args)
+        {
+            if (start_.cur_ != start_.first_)
+            {
+                new (start_.cur_ - 1) T(std::forward<Args>(args)...);
+                --start_.cur_;
+            }
+            else
+            {
+                bool expanded = check_map_size();
+                if (expanded)
+                    *(start_.node_ - 1) = new T[BufferSize];
+                start_.set_node(start_.node_ - 1);
+                start_.cur_ = start_.last_ - 1;
+                new (start_.cur_) T(std::forward<Args>(args)...);
+            }
+        }
 
         // 原地构造新元素到末尾
         template <typename... Args>
         void emplace_back(Args &&...args)
         {
-            insert(end(), T(std::forward<Args>(args)...));
+            if (finish_.cur_ != finish_.last_) // 当前缓冲区还有空间
+            {
+                // 直接在当前位置构造对象
+                new (finish_.cur_) T(std::forward<Args>(args)...);
+                ++finish_.cur_;
+            }
+            else // 当前缓冲区已满，需要新的缓冲区
+            {
+                bool expanded = check_map_size(); // 检查并扩展中控数组
+                if (expanded)
+                {
+                    // 扩展后分配新缓冲区
+                    *(finish_.node_ + 1) = new T[BufferSize];
+                }
+                // 切换到下一个缓冲区节点
+                finish_.set_node(finish_.node_ + 1);
+                finish_.cur_ = finish_.first_;
+                // 构造新元素
+                new (finish_.cur_) T(std::forward<Args>(args)...);
+                ++finish_.cur_;
+            }
         }
 
         // 访问首元素，空则断言
@@ -291,44 +331,6 @@ namespace zstl
             assert(!empty());
             iterator tmp = finish_;
             return *(tmp - 1);
-        }
-
-        // 在 pos 插入右值
-        iterator insert(iterator pos, T &&val)
-        {
-            assert(pos >= begin() && pos <= end());
-            size_t index = pos - start_; // 插入位置的索引
-            size_t sz = size();
-            bool expanded = check_map_size(); // 检查并可能扩容
-            iterator iter;
-
-            if (index < sz / 2) // 插入点在前半段，从前向后搬移
-            {
-                if (expanded)
-                    *(start_.node_ - 1) = new T[BufferSize]; // 新扩容缓冲区
-                iter = start_ - 1;                           // 在最前面腾出位置
-                // 搬移 [start_, pos) 区间内的元素
-                while (iter + 1 != pos)
-                {
-                    *iter = std::move(*(iter + 1));
-                    ++iter;
-                }
-                --start_; // 更新 start_
-            }
-            else // 插入点在后半段，从后向前搬移
-            {
-                if (expanded)
-                    *(finish_.node_ + 1) = new T[BufferSize];
-                iter = finish_;
-                while (iter != pos)
-                {
-                    *iter = std::move(*(iter - 1));
-                    --iter;
-                }
-                ++finish_;
-            }
-            *iter = std::move(val); // 放入新值
-            return iter;
         }
 
         // 在 pos 插入左值，逻辑同上，仅拷贝而非移动
