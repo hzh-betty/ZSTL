@@ -67,12 +67,12 @@ namespace zstl
         {
         }
 
-        Ref operator*()const
+        Ref operator*() const
         {
             return node_->data_;
         }
 
-        Ptr operator->()const
+        Ptr operator->() const
         {
             return &node_->data_;
         }
@@ -469,21 +469,24 @@ namespace zstl
         {
             Node *parent = this->header_;
             Node *cur = this->header_->parent_;
-            T data(std::forward<Args>(args)...);
+            Node *newnode = create_node(std::forward<Args>(args)...);
 
             // 定位插入点（重复时统一走右支）
             while (cur)
             {
                 parent = cur;
-                if (this->com_(this->kov_(data), this->kov_(cur->data_)))
+                if (this->com_(this->kov_(newnode->data_), this->kov_(cur->data_)))
                     cur = cur->left_;
                 else
                 {
                     if constexpr (Unique) // —— 编译期分支
                     {
                         // 运行时判断是否重复
-                        if (!this->com_(this->kov_(cur->data_), this->kov_(data)))
+                        if (!this->com_(this->kov_(cur->data_), this->kov_(newnode->data_)))
+                        {
+                            this->destroy_node(newnode);
                             return std::pair<iterator, bool>{iterator(cur), false};
+                        }
                     }
                     // 对于 Unique==false 或者 未重复，都走右支
                     cur = cur->right_;
@@ -491,7 +494,6 @@ namespace zstl
             }
 
             // 创建并挂接
-            Node *newnode = new Node(std::move(data));
             newnode->parent_ = parent;
             this->link_node(newnode, parent);
 
@@ -643,7 +645,7 @@ namespace zstl
                 }
             }
 
-            delete del; // 实际删除结点
+            this->destroy_node(del); // 实际删除结点
         }
 
         // 复制节点
@@ -660,6 +662,21 @@ namespace zstl
         void copy_delete_node(L &a, L &b)
         {
             const_cast<L &>(a) = b;
+        }
+
+        // 创建节点
+        template <typename... Args>
+        Node *create_node(Args &&...args)
+        {
+            Node *newnode = new Node(std::forward<Args>(args)...);
+            newnode->left_ = newnode->right_ = newnode->parent_ = nullptr;
+            return newnode;
+        }
+
+        // 销毁节点
+        void destroy_node(Node *node)
+        {
+            delete node;
         }
 
     protected:
@@ -741,7 +758,7 @@ namespace zstl
             if (this != &other)
             {
                 clear();
-                delete this->header_;
+                this->destroy_node(this->header_);
                 this->header_ = other.header_;
                 size_ = other.size_;
                 other.header_ = nullptr;
@@ -937,7 +954,7 @@ namespace zstl
             if (this->header_)
             {
                 clear();
-                delete this->header_;
+                this->destroy_node(this->header_);
             }
         }
 
@@ -954,7 +971,7 @@ namespace zstl
             // 递归销毁右子树
             destroy(root->right_);
             // 销毁根节点
-            delete root;
+            this->destroy_node(root);
             root = nullptr;
         }
 
@@ -992,7 +1009,7 @@ namespace zstl
         // 初始化头节点
         void init_header()
         {
-            this->header_ = new Node(T());
+            this->header_ = this->create_node(T());
             this->header_->col_ = Color::RED;
             this->header_->left_ = this->header_;
             this->header_->right_ = this->header_;

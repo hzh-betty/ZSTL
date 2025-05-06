@@ -261,7 +261,7 @@ namespace zstl
             }
             return *this;
         }
-        
+
         /** 在前端原地构造 */
         template <typename... Args>
         void emplace_front(Args &&...args)
