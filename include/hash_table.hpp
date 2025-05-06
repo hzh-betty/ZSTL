@@ -60,8 +60,8 @@ namespace zstl
             : node_(it.node_), ht_(it.ht_) {}
 
         // 获取节点数据
-        Ref operator*() { return node_->data_; }
-        Ptr operator->() { return &node_->data_; }
+        Ref operator*()const { return node_->data_; }
+        Ptr operator->()const { return &node_->data_; }
 
         // 前置++：移动到下一个节点或下一个非空桶
         Self &operator++()

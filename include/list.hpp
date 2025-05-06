@@ -81,13 +81,13 @@ namespace zstl
         }
 
         // 重载解引用运算符，返回节点存储的数据
-        Ref operator*()
+        Ref operator*()const
         {
             return base_->as_node()->data_;
         }
 
         // 重载成员访问运算符，返回数据的指针
-        Ptr operator->()
+        Ptr operator->()const
         {
             return &(base_->as_node()->data_);
         }

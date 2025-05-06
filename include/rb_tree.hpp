@@ -67,12 +67,12 @@ namespace zstl
         {
         }
 
-        Ref operator*()
+        Ref operator*()const
         {
             return node_->data_;
         }
 
-        Ptr operator->()
+        Ptr operator->()const
         {
             return &node_->data_;
         }
