@@ -219,9 +219,9 @@ namespace zstl
         template <typename... Args>
         std::pair<iterator, bool> emplace_unique(Args &&...args)
         {
-            T data(std::forward<Args>(args)...);
+            Node *new_node = new Node(std::forward<Args>(args)...);
             // 已存在则不插入
-            auto it_pair = find(kov_(data));
+            auto it_pair = find(kov_(new_node->data_));
             if (it_pair != end())
                 return {it_pair, false};
 
@@ -231,8 +231,7 @@ namespace zstl
                 rehash();
             }
             // 插入到头部
-            size_t index = hash_(kov_(data)) % tables_.size();
-            Node *new_node = new Node(std::move(data));
+            size_t index = hash_(kov_(new_node->data_)) % tables_.size();
             new_node->next_ = tables_[index];
             tables_[index] = new_node;
             ++size_;
@@ -243,20 +242,19 @@ namespace zstl
         template <typename... Args>
         iterator emplace_duplicate(Args &&...args)
         {
-            T data(std::forward<Args>(args)...);
+            Node *new_node = new Node(std::forward<Args>(args)...);
             // 负载因子 >= 1 时扩容
             if (size_ == tables_.size())
             {
                 rehash();
             }
             // 插入到头部
-            size_t index = hash_(kov_(data)) % tables_.size();
-            Node *new_node = new Node(std::move(data));
+            size_t index = hash_(kov_(new_node->data_)) % tables_.size();
             Node *cur = tables_[index];
             Node *prev = nullptr; // 尾插
             while (cur)
             {
-                if (com_(kov_(cur->data_), kov_(data)))
+                if (com_(kov_(cur->data_), kov_(new_node->data_)))
                 {
                     break;
                 }

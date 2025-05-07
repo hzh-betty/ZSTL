@@ -485,7 +485,7 @@ namespace zstl
                         if (!this->com_(this->kov_(cur->data_), this->kov_(newnode->data_)))
                         {
                             this->destroy_node(newnode);
-                            return std::pair<iterator, bool>{iterator(cur), false};
+                            return std::pair<Node *, bool>{cur, false};
                         }
                     }
                     // 对于 Unique==false 或者 未重复，都走右支
@@ -502,11 +502,12 @@ namespace zstl
             this->header_->parent_->col_ = Color::BLACK;
 
             if constexpr (Unique)
-                return std::pair<iterator, bool>{iterator(newnode), true};
+                return std::pair<Node *, bool>{newnode, true};
             else
-                return iterator(newnode);
+                return newnode;
         }
 
+        // 删除的辅助函数
         Node *erase_impl(Node *target, Node *successor)
         {
             // 1. 定位待真正删除的节点 del and its parent delP
@@ -899,7 +900,7 @@ namespace zstl
             }
 
             // 否则逐节点删除，因为删除存在替换删除逻辑
-            // 如果last被替换，可能
+            // 如果last被替换，就会出现一直first!=last的情况
             const_iterator ret = last.node_;
             while (first != last)
             {

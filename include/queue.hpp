@@ -2,6 +2,7 @@
 #include <iostream>
 #include "deque.hpp"
 #include "vector.hpp"
+#include <functional>
 namespace zstl
 {
     template <typename T, typename Container = deque<T>>
@@ -33,7 +34,7 @@ namespace zstl
         {
             con_.emplace_back(std::forward<Args>(args)...);
         }
-        
+
         // 插入元素
         void push(const T &x)
         {
@@ -84,26 +85,8 @@ namespace zstl
         Container con_;
     };
 
-    template <typename T>
-    struct less
-    {
-        bool operator()(const T &t1, const T &t2)
-        {
-            return t1 < t2;
-        }
-    };
-
-    template <typename T>
-    struct greater
-    {
-        bool operator()(const T &t1, const T &t2)
-        {
-            return t1 > t2;
-        }
-    };
-
     /*优先级队列*/
-    template <typename T, typename Container = vector<T>, typename Compare = less<T>>
+    template <typename T, typename Container = vector<T>, typename Compare = std::less<T>>
     class priority_queue
     {
     public:
