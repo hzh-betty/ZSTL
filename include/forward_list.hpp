@@ -7,17 +7,12 @@ namespace zstl
     template <typename T>
     struct ForwardListNode
     {
-        T data_;                // 节点存储的数据
-        ForwardListNode *next_; // 指向下一个节点的指针
+        T data_;                          // 节点存储的数据
+        ForwardListNode *next_ = nullptr; // 指向下一个节点的指针
 
-        // 构造函数：初始化数据与下一节点指针
-        ForwardListNode(const T &data = T(), ForwardListNode *node = nullptr)
-            : data_(data), next_(node)
-        {
-        }
-        // 构造函数：初始化数据与下一节点指针
-        ForwardListNode(T &&data, ForwardListNode *node = nullptr)
-            : data_(std::move(data)), next_(node)
+        // 完美转发构造函数
+        template <typename... Args>
+        ForwardListNode(Args &&...args) : data_(std::forward<Args>(args)...)
         {
         }
     };
@@ -89,7 +84,7 @@ namespace zstl
     public:
         // 构造：创建哨兵头节点
         forward_list()
-            : header_(new Node())
+            : header_(new Node(T()))
         {
         }
 
@@ -106,7 +101,7 @@ namespace zstl
 
         // 复制构造：深拷贝链表数据
         forward_list(const forward_list &other)
-            : header_(new Node())
+            : header_(new Node(T()))
         {
             Node *cur = other.header_->next_;
             Node *prev = header_;
@@ -134,7 +129,7 @@ namespace zstl
         forward_list(forward_list &&other) noexcept
             : header_(other.header_)
         {
-            other.header_ = new Node();
+            other.header_ = nullptr;
         }
 
         // 移动赋值运算符
@@ -145,14 +140,14 @@ namespace zstl
                 clear();
                 delete header_;
                 header_ = other.header_;
-                other.header_ = new Node();
+                other.header_ = nullptr;
             }
             return *this;
         }
 
         // initializer_list 构造函数
         forward_list(std::initializer_list<T> il)
-            : header_(new Node())
+            : header_(new Node(T()))
         {
             Node *tail = header_;
             for (const auto &val : il)
@@ -167,10 +162,12 @@ namespace zstl
         template <typename... Args>
         iterator emplace_after(iterator pos, Args &&...args)
         {
-            Node *new_node = new Node(T(std::forward<Args>(args)...), pos.node_->next_);
+            Node *new_node = new Node(std::forward<Args>(args)...);
+            new_node->next_ =  pos.node_->next_;
             pos.node_->next_ = new_node;
             return iterator(new_node);
         }
+        
         // 访问首元素
         T &front() { return header_->next_->data_; }
         const T &front() const { return header_->next_->data_; }
@@ -178,7 +175,8 @@ namespace zstl
         // 在头部插入元素
         void push_front(const T &val)
         {
-            Node *new_node = new Node(val, header_->next_);
+            Node *new_node = new Node(val);
+            new_node->next_ = header_->next_;
             header_->next_ = new_node;
         }
 
@@ -196,7 +194,8 @@ namespace zstl
         // 在指定位置之后插入元素，返回新节点迭代器
         iterator insert_after(iterator pos, const T &val)
         {
-            Node *new_node = new Node(val, pos.node_->next_);
+            Node *new_node = new Node(val);
+            new_node->next_ = pos.node_->next_;
             pos.node_->next_ = new_node;
             return iterator(new_node);
         }
