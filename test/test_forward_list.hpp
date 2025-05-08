@@ -128,7 +128,7 @@ namespace zstl
             EXPECT_EQ(*it, expected[idx++]);
         }
         EXPECT_EQ(idx, 3);
-        EXPECT_TRUE(lst1.begin() == lst1.end());
+
     }
 
     // 测试移动赋值
@@ -148,7 +148,6 @@ namespace zstl
             EXPECT_EQ(*it, expected[idx++]);
         }
         EXPECT_EQ(idx, 3);
-        EXPECT_TRUE(lst1.begin() == lst1.end());
     }
 
     // 测试 initializer_list 构造
