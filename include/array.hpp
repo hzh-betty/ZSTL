@@ -4,7 +4,6 @@
 #include<initializer_list>
 namespace zstl
 {
-
     // 固定大小的数组容器，模拟 std::array
     template <typename T, size_t N>
     class array
@@ -83,7 +82,6 @@ namespace zstl
             }
         }
         // 返回数组大小
-        constexpr size_t size() const noexcept { return N; }
         constexpr size_t max_size() const noexcept { return N; }
         // 判断数组是否为空（N==0）
         constexpr bool empty() const noexcept { return N == 0; }
