@@ -93,27 +93,27 @@ namespace zstl
     // 判断是否属于某个迭代器
     template <typename It>
     inline constexpr bool is_input_iterator_v =
-        std::is_base_of_v<input_iterator_tag, iterator_traits<It>::iterator_category>;
+        std::is_base_of_v<input_iterator_tag, typename iterator_traits<It>::iterator_category>;
 
     template <typename It>
     inline constexpr bool is_exactly_input_iterator_v =
-        std::is_same_v<input_iterator_tag, iterator_traits<It>::iterator_category>;
+        std::is_same_v<input_iterator_tag, typename iterator_traits<It>::iterator_category>;
 
     template <typename It>
     inline constexpr bool is_output_iterator_v =
-        std::is_base_of_v<output_iterator_tag, iterator_traits<It>::iterator_category>;
+        std::is_base_of_v<output_iterator_tag, typename iterator_traits<It>::iterator_category>;
 
     template <typename It>
     inline constexpr bool is_forward_iterator_v =
-        std::is_base_of_v<forward_iterator_tag, iterator_traits<It>::iterator_category>;
+        std::is_base_of_v<forward_iterator_tag, typename iterator_traits<It>::iterator_category>;
 
     template <typename It>
     inline constexpr bool is_bidirectional_iterator_v =
-        std::is_base_of_v<bidirectional_iterator_tag, iterator_traits<It>::iterator_category>;
+        std::is_base_of_v<bidirectional_iterator_tag, typename iterator_traits<It>::iterator_category>;
 
     template <typename It>
     inline constexpr bool is_random_access_iterator_v =
-        std::is_base_of_v<random_access_iterator_tag, iterator_traits<It>::iterator_category>;
+        std::is_base_of_v<random_access_iterator_tag, typename iterator_traits<It>::iterator_category>;
 
     template <typename It>
     inline constexpr bool is_iterator_v = is_input_iterator_v<It> || is_output_iterator_v<It>;
@@ -163,8 +163,24 @@ namespace zstl
         }
         else // 正向
         {
+            if (n < 0)
+                return;
             while (n--)
                 ++it;
         }
+    }
+
+    template <typename It>
+    It next(It it, typename iterator_traits<It>::difference_type n = 1)
+    {
+        advance(it, n);
+        return it;
+    }
+
+    template <typename It>
+    It prev(It it, typename iterator_traits<It>::difference_type n = 1)
+    {
+        advance(it, -n);
+        return it;
     }
 };

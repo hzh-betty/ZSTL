@@ -52,7 +52,7 @@ namespace zstl
 
         // 迭代器萃取必需的五种类型
         using iterator_category = forward_iterator_tag;
-        using value_type = Key;
+        using value_type = Value;
         using difference_type = ptrdiff_t;
         using pointer = Ptr;
         using reference = Ref;

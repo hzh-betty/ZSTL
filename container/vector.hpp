@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cassert>
 #include <initializer_list>
+#include"../iterator/reverse_iterator.hpp"
 namespace zstl
 {
     template <typename T>
@@ -13,6 +14,7 @@ namespace zstl
         // 用原始指针模拟迭代器
         using iterator = T *;
         using const_iterator = const T *;
+
 
         // 返回指向起始元素的迭代器
         iterator begin()

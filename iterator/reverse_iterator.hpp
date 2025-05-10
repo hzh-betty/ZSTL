@@ -7,7 +7,7 @@ namespace zstl
     class input_reverse_iterator
     {
     public:
-        using self = reverse_iterator<It>;
+        using self = input_reverse_iterator<It>;
 
         using value_type = typename iterator_traits<It>::value_type;
         using iterator_category = typename iterator_traits<It>::iterator_category;
@@ -65,7 +65,7 @@ namespace zstl
         using Base = input_reverse_iterator<It>;
 
     public:
-        using self = reverse_iterator<It>;
+        using self = bidirectional_reverse_iterator<It>;
         using value_type = typename iterator_traits<It>::value_type;
         using iterator_category = typename iterator_traits<It>::iterator_category;
         using difference_type = typename iterator_traits<It>::difference_type;
@@ -88,11 +88,34 @@ namespace zstl
             return tmp;
         }
 
-        bool operator<(const self &b) const
+    };
+
+    // 仅当底层迭代器是随机迭代器时启用 +=, +, -=, -, []
+    template <typename It>
+    class random_access_reverse_iterator : public bidirectional_reverse_iterator<It>
+    {
+        using Base = bidirectional_reverse_iterator<It>;
+
+    public:
+        // 类型定义
+        using self = random_access_reverse_iterator<It>;
+
+        using value_type = typename iterator_traits<It>::value_type;
+        using iterator_category = typename iterator_traits<It>::iterator_category;
+        using difference_type = typename iterator_traits<It>::difference_type;
+        using pointer = typename iterator_traits<It>::pointer;
+        using reference = typename iterator_traits<It>::reference;
+
+    public:
+        random_access_reverse_iterator() = default;
+        explicit random_access_reverse_iterator(It x) : Base(x) {}
+
+            bool operator<(const self &b) const
         {
             return this->current_ > b.current_;
         }
 
+        // 比较操作
         bool operator>(const self &b) const
         {
             return this->current_ < b.current_;
@@ -107,27 +130,6 @@ namespace zstl
         {
             return this->current_ <= b.current_;
         }
-    };
-
-    // 仅当底层迭代器是随机迭代器时启用 +=, +, -=, -, []
-    template <typename It>
-    class random_access_reverse_iterator : public bidirectional_reverse_iterator<It>
-    {
-        using Base = bidirectional_reverse_iterator<It>;
-
-    public:
-        // 类型定义
-        using self = reverse_iterator<It>;
-
-        using value_type = typename iterator_traits<It>::value_type;
-        using iterator_category = typename iterator_traits<It>::iterator_category;
-        using difference_type = typename iterator_traits<It>::difference_type;
-        using pointer = typename iterator_traits<It>::pointer;
-        using reference = typename iterator_traits<It>::reference;
-
-    public:
-        random_access_reverse_iterator() = default;
-        explicit random_access_reverse_iterator(It x) : Base(x) {}
 
         self &operator+=(difference_type n)
         {

@@ -130,6 +130,7 @@ namespace zstl
             return self;
         }
 
+        
         // 重载相等运算符，判断两个迭代器是否指向同一节点
         bool operator==(const Self &s) const
         {
@@ -153,7 +154,7 @@ namespace zstl
 
     public:
         using iterator = ListIterator<T, T &, T *>;             // 普通迭代器类型
-        using const_iterator = ListIterator<T, const T &, T *>; // const 迭代器类型
+        using const_iterator = ListIterator<T, const T &, const T *>; // const 迭代器类型
 
         // 返回指向首个有效数据节点的迭代器
         iterator begin()

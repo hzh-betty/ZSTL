@@ -15,6 +15,7 @@ namespace zstl
         using map_pointer = T **;  // 指向缓冲区指针的指针类型
         using Self = DequeIterator<T, Ptr, Ref, BufferSize>;
 
+    public:
         // 迭代器萃取必需的五种类型
         using iterator_category = random_access_iterator_tag;
         using value_type = T;
