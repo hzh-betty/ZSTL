@@ -18,6 +18,15 @@ namespace zstl
     public:
         input_reverse_iterator() = default;
         explicit input_reverse_iterator(It x) : current_(x) {}
+        // 普通迭代器构造const迭代器
+        template <typename U, typename = std::enable_if_t<std::is_convertible_v<U, It>>>
+        input_reverse_iterator(const input_reverse_iterator<U> &other)
+            : current_(other.base()) {}
+
+        It base() const
+        {
+            return current_;
+        }
 
         reference operator*() const
         {
@@ -75,6 +84,10 @@ namespace zstl
     public:
         bidirectional_reverse_iterator() = default;
         explicit bidirectional_reverse_iterator(It x) : Base(x) {}
+        // 普通迭代器构造const迭代器
+        template<typename U, typename = std::enable_if_t<std::is_convertible_v<U, It>>>
+        bidirectional_reverse_iterator(const bidirectional_reverse_iterator<U>& other)
+            : Base(other.base()) {}
 
         self &operator--()
         {
@@ -87,7 +100,6 @@ namespace zstl
             ++this->current_;
             return tmp;
         }
-
     };
 
     // 仅当底层迭代器是随机迭代器时启用 +=, +, -=, -, []
@@ -109,8 +121,12 @@ namespace zstl
     public:
         random_access_reverse_iterator() = default;
         explicit random_access_reverse_iterator(It x) : Base(x) {}
+                // 普通迭代器构造const迭代器
+        template<typename U, typename = std::enable_if_t<std::is_convertible_v<U, It>>>
+        random_access_reverse_iterator(const random_access_reverse_iterator<U>& other)
+            : Base(other.base()) {}
 
-            bool operator<(const self &b) const
+        bool operator<(const self &b) const
         {
             return this->current_ > b.current_;
         }
@@ -160,7 +176,7 @@ namespace zstl
     };
 
     template <typename It>
-    using reverse_iterator = std::conditional_t<is_random_access_iterator_v<It>,
-                                                random_access_reverse_iterator<It>,
-                                                std::conditional_t<is_bidirectional_iterator_v<It>, bidirectional_reverse_iterator<It>, input_reverse_iterator<It>>>;
+    using basic_reverse_iterator = std::conditional_t<is_random_access_iterator_v<It>,
+                                                      random_access_reverse_iterator<It>,
+                                                      std::conditional_t<is_bidirectional_iterator_v<It>, bidirectional_reverse_iterator<It>, input_reverse_iterator<It>>>;
 };

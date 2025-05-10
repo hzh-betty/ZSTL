@@ -2,6 +2,8 @@
 #include <iostream>
 #include <cassert>
 #include <cstring>
+#include"../iterator/reverse_iterator.hpp"
+
 namespace zstl
 {
     // 通用字符特性模板，提供字符类型的基本操作
@@ -100,6 +102,22 @@ namespace zstl
         using const_iterator = const CharT *;
         inline static const size_type npos = -1; // 特殊常量表示无效位置
 
+        // 迭代器访问接口
+        iterator begin() noexcept { return str_; }             // 起始迭代器
+        const_iterator begin() const noexcept { return str_; } // const版本
+        iterator end() noexcept { return str_ + size_; }       // 末尾迭代器
+        const_iterator end() const noexcept { return str_ + size_; }
+
+        // 反向迭代器
+        using reverse_iterator = basic_reverse_iterator<iterator>;
+        using const_reverse_iterator = basic_reverse_iterator<iterator>;
+
+        reverse_iterator rbegin() { return reverse_iterator(end()); }
+        reverse_iterator rend() { return reverse_iterator(begin()); }
+        const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+        const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
+
+    public:
         // 默认构造函数：创建空字符串（含终止符）
         basic_string()
         {
@@ -164,12 +182,6 @@ namespace zstl
             }
             return *this;
         }
-
-        // 迭代器访问接口
-        iterator begin() noexcept { return str_; }             // 起始迭代器
-        const_iterator begin() const noexcept { return str_; } // const版本
-        iterator end() noexcept { return str_ + size_; }       // 末尾迭代器
-        const_iterator end() const noexcept { return str_ + size_; }
 
         // 容量相关方法
         size_type size() const { return size_; }           // 当前元素数量

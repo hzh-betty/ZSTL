@@ -1,7 +1,7 @@
 #pragma once
 #include "rb_tree.hpp"
 #include <type_traits>
-
+#include "../iterator/reverse_iterator.hpp"
 namespace zstl
 {
     // 空类型标记，用于模板元编程中区分set和map
@@ -37,12 +37,21 @@ namespace zstl
             const_iterator,
             typename tree_type::iterator>;
 
+        using reverse_iterator = basic_reverse_iterator<iterator>;
+        using const_reverse_iterator = basic_reverse_iterator<iterator>;
+
     public:
         /* 迭代器访问 */
         iterator begin() noexcept { return tree_.begin(); }
         const_iterator begin() const noexcept { return tree_.begin(); }
         iterator end() noexcept { return tree_.end(); }
         const_iterator end() const noexcept { return tree_.end(); }
+
+        // 反向迭代器
+        reverse_iterator rbegin() { return tree_.rbegin(); }
+        reverse_iterator rend() { return tree_.rend(); }
+        const_reverse_iterator rbegin() const { return tree_.rbegin(); }
+        const_reverse_iterator rend() const { return tree_.rend(); }
 
     public:
         // 默认构造/拷贝/移动构造函数

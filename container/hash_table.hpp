@@ -2,7 +2,7 @@
 #include <iostream>
 #include <utility>
 #include "vector.hpp"
-#include "../iterator/iterator.hpp"
+#include"../iterator/reverse_iterator.hpp"
 
 namespace zstl
 {
@@ -158,6 +158,7 @@ namespace zstl
         }
         const_iterator end() const { return const_iterator(nullptr, this); }
 
+    public:
         // 默认构造与析构
         HashTable() = default;
         ~HashTable() { clear(); }

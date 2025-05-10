@@ -1,3 +1,4 @@
+#pragma once
 #include <gtest/gtest.h>
 #include "../container/string.hpp"
 #include "../container/vector.hpp"
@@ -8,6 +9,7 @@
 #include "../container/unordered_set.hpp"
 #include "../container/map.hpp"
 #include "../container/set.hpp"
+#include "../container/array.hpp"
 #include "../iterator/iterator.hpp"
 
 namespace zstl
@@ -82,6 +84,13 @@ namespace zstl
     {
         using Container = zstl::set<string>;
         TEST_CONST_ITERATOR_TRAITS(Container, zstl::bidirectional_iterator_tag, string);
+    }
+
+    TEST(IteratorTraitsTest, Array)
+    {
+        using Container = zstl::array<int, 10>;
+        TEST_ITERATOR_TRAITS(Container, zstl::random_access_iterator_tag, int);
+        TEST_CONST_ITERATOR_TRAITS(Container, zstl::random_access_iterator_tag, int);
     }
 
     // 随机访问迭代器：vector<int>::iterator

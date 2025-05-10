@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 #include <cassert>
-#include "../iterator/iterator.hpp"
+#include"../iterator/reverse_iterator.hpp"
 
 namespace zstl
 {
@@ -130,7 +130,7 @@ namespace zstl
             return self;
         }
 
-        
+
         // 重载相等运算符，判断两个迭代器是否指向同一节点
         bool operator==(const Self &s) const
         {
@@ -179,6 +179,15 @@ namespace zstl
         {
             return head_;
         }
+
+                // 反向迭代器
+        using reverse_iterator = basic_reverse_iterator<iterator>;
+        using const_reverse_iterator = basic_reverse_iterator<iterator>;
+
+        reverse_iterator rbegin()  { return reverse_iterator(end()); }
+        reverse_iterator rend()  { return reverse_iterator(begin()); }
+        const_reverse_iterator rbegin() const  { return const_reverse_iterator(end()); }
+        const_reverse_iterator rend() const  { return const_reverse_iterator(begin()); }
 
     public:
         // 默认构造函数

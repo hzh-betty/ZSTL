@@ -1,7 +1,7 @@
 #pragma once
 #include <utility>
 #include <iostream>
-#include "../iterator/iterator.hpp"
+#include"../iterator/reverse_iterator.hpp"
 
 namespace zstl
 {
@@ -722,6 +722,15 @@ namespace zstl
         {
             return this->header_;
         }
+
+        // 反向迭代器
+        using reverse_iterator = basic_reverse_iterator<iterator>;
+        using const_reverse_iterator = basic_reverse_iterator<iterator>;
+
+        reverse_iterator rbegin() { return reverse_iterator(end()); }
+        reverse_iterator rend() { return reverse_iterator(begin()); }
+        const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+        const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
 
     public:
         // 构造函数
