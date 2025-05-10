@@ -1,7 +1,8 @@
 #pragma once
 #include <utility>
 #include <iostream>
-#include <type_traits>
+#include "../iterator/iterator.hpp"
+
 namespace zstl
 {
     // 红黑树的颜色
@@ -50,6 +51,14 @@ namespace zstl
     {
         using Node = RBNode<T>;
         using Self = RBTreeIterator<T, Ref, Ptr>;
+
+        // 迭代器萃取必需的五个类型
+        using iterator_category = bidirectional_iterator_tag;
+        using value_type = T;
+        using difference_type = ptrdiff_t;
+        using pointer = Ptr;
+        using reference = Ref;
+
         RBTreeIterator(Node *node)
             : node_(node)
         {

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <initializer_list>
 #include <cassert>
+#include "../iterator/iterator.hpp"
 
 namespace zstl
 {
@@ -10,9 +11,16 @@ namespace zstl
     struct DequeIterator
     {
     private:
-        using pointer = T *;           // 元素指针类型
-        using map_pointer = pointer *; // 指向缓冲区指针的指针类型
+        using value_pointer = T *; // 元素指针类型
+        using map_pointer = T **;  // 指向缓冲区指针的指针类型
         using Self = DequeIterator<T, Ptr, Ref, BufferSize>;
+
+        // 迭代器萃取必需的五种类型
+        using iterator_category = random_access_iterator_tag;
+        using value_type = T;
+        using difference_type = ptrdiff_t;
+        using pointer = Ptr;
+        using reference = Ref;
 
     public:
         // 默认构造，初始化所有指针为空
@@ -124,7 +132,7 @@ namespace zstl
         }
 
         // + 运算符，生成临时并调用 +=
-        Self operator+(int n)const
+        Self operator+(int n) const
         {
             Self tmp(*this);
             return tmp += n;
@@ -137,14 +145,14 @@ namespace zstl
         }
 
         // - n 运算符
-        Self operator-(int n)const
+        Self operator-(int n) const
         {
             Self tmp(*this);
             return tmp += (-n);
         }
 
         // 下标运算符，通过 +n 后解引用
-        Ref operator[](int n)const
+        Ref operator[](int n) const
         {
             return *(*this + n);
         }
@@ -161,10 +169,10 @@ namespace zstl
         bool operator<=(const Self &s) const { return *this < s || *this == s; }
         bool operator>(const Self &s) const { return !(*this <= s); }
 
-        pointer first_;    // 当前缓冲区首地址
-        pointer last_;     // 当前缓冲区尾后地址
-        pointer cur_;      // 当前元素地址
-        map_pointer node_; // 指向中控数组中缓冲区指针的位置
+        value_pointer first_; // 当前缓冲区首地址
+        value_pointer last_;  // 当前缓冲区尾后地址
+        value_pointer cur_;   // 当前元素地址
+        map_pointer node_;    // 指向中控数组中缓冲区指针的位置
     };
 
     // Deque 容器实现

@@ -7,7 +7,7 @@ namespace zstl
     template <typename T>
     class vector
     {
-        static_assert(!std::is_same<bool, T>::value, "vector<bool> is abandoned in mystl");
+        static_assert(!std::is_same_v<bool, T>, "vector<bool> is abandoned in mystl");
 
     public:
         // 用原始指针模拟迭代器

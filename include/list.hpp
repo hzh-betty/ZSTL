@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <cassert>
+#include "../iterator/iterator.hpp"
 
 namespace zstl
 {
@@ -69,6 +70,13 @@ namespace zstl
         using node_ptr = typename node_traits<T>::node_ptr;
         using Self = ListIterator<T, Ref, Ptr>; // 当前迭代器类型
 
+        // 迭代器萃取必需的五个类型
+        using iterator_category = bidirectional_iterator_tag;
+        using value_type = T;
+        using difference_type = ptrdiff_t;
+        using pointer = Ptr;
+        using reference = Ref;
+
         // 转换构造函数
         ListIterator(const ListIterator<T, T &, T *> &rhs)
             : base_(rhs.base_) {}
@@ -81,13 +89,13 @@ namespace zstl
         }
 
         // 重载解引用运算符，返回节点存储的数据
-        Ref operator*()const
+        Ref operator*() const
         {
             return base_->as_node()->data_;
         }
 
         // 重载成员访问运算符，返回数据的指针
-        Ptr operator->()const
+        Ptr operator->() const
         {
             return &(base_->as_node()->data_);
         }

@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include "../iterator/iterator.hpp"
 
 namespace zstl
 {
@@ -23,6 +24,13 @@ namespace zstl
     {
         using Node = ForwardListNode<T>;
         using Self = ForwardListIterator<T, Ref, Ptr>;
+
+        // 迭代器萃取必需的五种类型
+        using iterator_category = forward_iterator_tag;
+        using value_type = T;
+        using difference_type = ptrdiff_t;
+        using pointer = Ptr;
+        using reference = Ref;
 
         Node *node_; // 当前指向的节点
 
@@ -163,11 +171,11 @@ namespace zstl
         iterator emplace_after(iterator pos, Args &&...args)
         {
             Node *new_node = new Node(std::forward<Args>(args)...);
-            new_node->next_ =  pos.node_->next_;
+            new_node->next_ = pos.node_->next_;
             pos.node_->next_ = new_node;
             return iterator(new_node);
         }
-        
+
         // 访问首元素
         T &front() { return header_->next_->data_; }
         const T &front() const { return header_->next_->data_; }

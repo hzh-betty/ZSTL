@@ -2,6 +2,7 @@
 #include <iostream>
 #include <utility>
 #include "vector.hpp"
+#include "../iterator/iterator.hpp"
 
 namespace zstl
 {
@@ -25,13 +26,13 @@ namespace zstl
     template <typename T>
     struct HashNode
     {
-        T data_;         // 存储的数据
+        T data_;                   // 存储的数据
         HashNode *next_ = nullptr; // 指向下一个节点
 
         // 完美转发构造函数
         template <typename... Args>
         HashNode(Args &&...args)
-        :data_(std::forward<Args>(args)...)
+            : data_(std::forward<Args>(args)...)
         {
         }
     };
@@ -49,6 +50,13 @@ namespace zstl
         using HT = HashTable<Key, Value, HashFunc, CompareFunc>;
         using Self = HashTableIterator<Key, Value, Ref, Ptr, HashFunc, CompareFunc>;
 
+        // 迭代器萃取必需的五种类型
+        using iterator_category = forward_iterator_tag;
+        using value_type = Key;
+        using difference_type = ptrdiff_t;
+        using pointer = Ptr;
+        using reference = Ref;
+
         Node *node_;   // 当前节点
         const HT *ht_; // 所属哈希表
 
@@ -60,8 +68,8 @@ namespace zstl
             : node_(it.node_), ht_(it.ht_) {}
 
         // 获取节点数据
-        Ref operator*()const { return node_->data_; }
-        Ptr operator->()const { return &node_->data_; }
+        Ref operator*() const { return node_->data_; }
+        Ptr operator->() const { return &node_->data_; }
 
         // 前置++：移动到下一个节点或下一个非空桶
         Self &operator++()
