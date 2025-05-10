@@ -124,7 +124,7 @@ namespace zstl
         }
 
         // + 运算符，生成临时并调用 +=
-        Self operator+(int n)
+        Self operator+(int n)const
         {
             Self tmp(*this);
             return tmp += n;
@@ -137,14 +137,14 @@ namespace zstl
         }
 
         // - n 运算符
-        Self operator-(int n)
+        Self operator-(int n)const
         {
             Self tmp(*this);
             return tmp += (-n);
         }
 
         // 下标运算符，通过 +n 后解引用
-        Ref operator[](int n)
+        Ref operator[](int n)const
         {
             return *(*this + n);
         }

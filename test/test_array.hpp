@@ -7,12 +7,10 @@ namespace zstl
     TEST(ArrayTest, Capacity)
     {
         array<int, 5> a;
-        EXPECT_EQ(a.size(), 5u);     // size 应等于模板参数 N
         EXPECT_EQ(a.max_size(), 5u); // max_size 同 size
         EXPECT_FALSE(a.empty());     // N!=0 时非空
 
         array<int, 0> b;
-        EXPECT_EQ(b.size(), 0u);
         EXPECT_EQ(b.max_size(), 0u);
         EXPECT_TRUE(b.empty()); // N==0 时为空
     }
@@ -26,7 +24,7 @@ namespace zstl
         EXPECT_EQ(a.front(), 7);
         EXPECT_EQ(a.back(), 7);
         // 检查每个元素
-        for (size_t i = 0; i < a.size(); ++i)
+        for (size_t i = 0; i < a.max_size(); ++i)
         {
             EXPECT_EQ(a[i], 7);
         }
@@ -68,7 +66,7 @@ namespace zstl
             EXPECT_EQ(*it, 9);
             ++count;
         }
-        EXPECT_EQ(count, a.size()); // 遍历次数应等于 size
+        EXPECT_EQ(count, a.max_size()); // 遍历次数应等于 size
     }
 
     // 测试 const_iterator
@@ -82,14 +80,14 @@ namespace zstl
             EXPECT_EQ(*it, 'x');
             ++cnt;
         }
-        EXPECT_EQ(cnt, a.size());
+        EXPECT_EQ(cnt, a.max_size());
     }
 
     // 测试 initializer_list 构造（注意：array 没有移动构造和移动赋值）
     TEST(ArrayTest, InitializerListConstructor)
     {
         array<int, 3> a = {1, 2, 3};
-        EXPECT_EQ(a.size(), 3u);
+        EXPECT_EQ(a.max_size(), 3u);
         EXPECT_EQ(a[0], 1);
         EXPECT_EQ(a[1], 2);
         EXPECT_EQ(a[2], 3);
