@@ -1,7 +1,7 @@
 #pragma once
 #include <gtest/gtest.h>
-#include "../include/queue.hpp"
-#include "../include/deque.hpp"
+#include "../container/queue.hpp"
+#include "../container/deque.hpp"
 
 namespace zstl
 {

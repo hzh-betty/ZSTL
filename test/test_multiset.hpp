@@ -1,8 +1,8 @@
 #pragma once
 #include <gtest/gtest.h>
-#include "../include/set.hpp"
-#include "../include/vector.hpp"
-#include "../include/string.hpp"
+#include "../container/set.hpp"
+#include "../container/vector.hpp"
+#include "../container/string.hpp"
 
 namespace zstl
 {

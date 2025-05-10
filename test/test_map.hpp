@@ -1,6 +1,6 @@
 #pragma once
-#include "../include/string.hpp"
-#include "../include/map.hpp"
+#include "../container/string.hpp"
+#include "../container/map.hpp"
 #include <gtest/gtest.h>
 namespace zstl
 {
