@@ -15,6 +15,9 @@
 #include "test_unordered_multimap.hpp"
 #include "test_forward_list.hpp"
 #include "test_array.hpp"
+
+#include "test_stream_iterator.hpp"
+
 // 主函数：运行所有测试
 int main(int argc, char **argv)
 {
