@@ -20,6 +20,8 @@
 #include "test_iterator_traits.hpp"
 #include "test_reverse_iterator.hpp"
 
+#include "test_alloc.hpp"
+
 // 主函数：运行所有测试
 int main(int argc, char **argv)
 {
