@@ -10,7 +10,7 @@ namespace zstl
     /* 二级空间配置器,当申请内存下于128bytes时,
     采用内存池的方式实现*/
     template <typename T>
-    class SeconaryAlloc
+    class MemoryPool
     {
         // 空闲链表节点
         union Obj

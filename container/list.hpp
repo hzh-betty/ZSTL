@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 #include <cassert>
-#include"../iterator/reverse_iterator.hpp"
+#include "../iterator/reverse_iterator.hpp"
 
 namespace zstl
 {
@@ -130,7 +130,6 @@ namespace zstl
             return self;
         }
 
-
         // 重载相等运算符，判断两个迭代器是否指向同一节点
         bool operator==(const Self &s) const
         {
@@ -153,7 +152,7 @@ namespace zstl
         using node_ptr = typename node_traits<T>::node_ptr;
 
     public:
-        using iterator = ListIterator<T, T &, T *>;             // 普通迭代器类型
+        using iterator = ListIterator<T, T &, T *>;                   // 普通迭代器类型
         using const_iterator = ListIterator<T, const T &, const T *>; // const 迭代器类型
 
         // 返回指向首个有效数据节点的迭代器
@@ -180,14 +179,14 @@ namespace zstl
             return head_;
         }
 
-                // 反向迭代器
+        // 反向迭代器
         using reverse_iterator = basic_reverse_iterator<iterator>;
         using const_reverse_iterator = basic_reverse_iterator<iterator>;
 
-        reverse_iterator rbegin()  { return reverse_iterator(end()); }
-        reverse_iterator rend()  { return reverse_iterator(begin()); }
-        const_reverse_iterator rbegin() const  { return const_reverse_iterator(end()); }
-        const_reverse_iterator rend() const  { return const_reverse_iterator(begin()); }
+        reverse_iterator rbegin() { return reverse_iterator(end()); }
+        reverse_iterator rend() { return reverse_iterator(begin()); }
+        const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+        const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
 
     public:
         // 默认构造函数
@@ -465,4 +464,5 @@ namespace zstl
         base_ptr head_; // 链表的头节点（不存储有效数据）
         size_t size_;   // 链表有效节点的数量
     };
+
 };
