@@ -18,6 +18,14 @@ namespace zstl
         using difference_type = std::ptrdiff_t; // 指针差值类型
 
     public:
+        // 可选添加rebind机制
+        template <typename U>
+        struct rebind
+        {
+            using other = alloc<U>;
+        };
+
+    public:
         // 分配单个对象的内存
         static T *allocate()
         {

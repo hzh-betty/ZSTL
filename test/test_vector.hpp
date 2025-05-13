@@ -1,7 +1,7 @@
 #pragma once
 #include <gtest/gtest.h>
 #include "../container/vector.hpp"
-
+#include"../allocator/memory.hpp"
 namespace zstl
 {
     // 测试 push_back() 和 pop_back() 基本功能

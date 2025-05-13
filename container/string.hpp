@@ -4,6 +4,7 @@
 #include <cstring>
 #include "../iterator/reverse_iterator.hpp"
 #include "../allocator/alloc.hpp"
+#include "../allocator/memory.hpp"
 
 namespace zstl
 {
@@ -90,60 +91,64 @@ namespace zstl
         static char_type *fill(char_type *dst, char_type ch, size_t count) noexcept { return reinterpret_cast<char_type *>(memset(dst, ch, count)); }
     };
 
-    // 动态字符串模板类，使用 zstl::allocator 管理内存
-    template <typename CharT, typename Traits = char_traits<CharT>,typename Alloc = alloc<CharT>>
+    // 动态字符串模板类，使用 zstl::allocator 和 allocator_traits 管理内存
+    template <typename CharT, typename Traits = char_traits<CharT>, typename Alloc = alloc<CharT>>
     class basic_string
     {
     public:
-
-        using char_type = CharT;
+        // 类型定义
+        using traits_type = Traits;
+        using value_type = typename Traits::char_type;
         using allocator_type = Alloc;
-        using size_type = size_t;
+        using traits_allocator = allocator_traits<allocator_type>;
+        using pointer = typename traits_allocator::pointer;
+        using const_pointer = typename traits_allocator::const_pointer;
+        using reference = value_type &;
+        using const_reference = const value_type &;
+        using size_type = typename traits_allocator::size_type;
+        using difference_type = typename traits_allocator::difference_type;
+
         inline static const size_type npos = static_cast<size_type>(-1);
 
-        using iterator = char_type *;
-        using const_iterator = const char_type *;
+    public:
+        // 迭代器相关
+        using iterator = value_type *;
+        using const_iterator = const value_type *;
+        using reverse_iterator = basic_reverse_iterator<iterator>;
+        using const_reverse_iterator = basic_reverse_iterator<const_iterator>;
 
-        // 迭代器接口
         iterator begin() noexcept { return str_; }
         const_iterator begin() const noexcept { return str_; }
         iterator end() noexcept { return str_ + size_; }
         const_iterator end() const noexcept { return str_ + size_; }
-
-        // 反向迭代器
-        using reverse_iterator = basic_reverse_iterator<iterator>;
-        using const_reverse_iterator = basic_reverse_iterator<const_iterator>;
         reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
         reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
         const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
         const_reverse_iterator rend() const noexcept { return const_reverse_iterator(begin()); }
 
     public:
-        // 默认构造：空字符串，含终止符
+        // 构造、析构与赋值
         basic_string()
-            : str_(allocator_type::allocate(1)), size_(0), capacity_(0)
+            : str_(traits_allocator::allocate(alloc_, 1)), size_(0), capacity_(0)
         {
-            Traits::fill(str_, CharT(0), 1);
+            Traits::fill(str_, value_type(0), 1);
         }
 
-        // C风格字符串构造：深拷贝
-        basic_string(const CharT *s)
+        basic_string(const value_type *s)
         {
             size_ = Traits::length(s);
             capacity_ = size_;
-            str_ = allocator_type::allocate(capacity_ + 1);
+            str_ = traits_allocator::allocate(alloc_, capacity_ + 1);
             Traits::copy(str_, s, size_ + 1);
         }
 
-        // 拷贝构造
         basic_string(const basic_string &o)
             : size_(o.size_), capacity_(o.capacity_)
         {
-            str_ = allocator_type::allocate(capacity_ + 1);
+            str_ = traits_allocator::allocate(alloc_, capacity_ + 1);
             Traits::copy(str_, o.str_, size_ + 1);
         }
 
-        // 移动构造
         basic_string(basic_string &&o) noexcept
             : str_(o.str_), size_(o.size_), capacity_(o.capacity_)
         {
@@ -151,19 +156,16 @@ namespace zstl
             o.size_ = o.capacity_ = 0;
         }
 
-        // 析构：销毁并释放
         ~basic_string()
         {
             if (str_)
             {
-                // 清空内容后释放内存
-                size_ = capacity_ = 0;
-                allocator_type::deallocate(str_, capacity_ + 1);
+                traits_allocator::deallocate(alloc_, str_, capacity_ + 1);
                 str_ = nullptr;
+                size_ = capacity_ = 0;
             }
         }
 
-        // 拷贝赋值，拷贝-交换范式
         basic_string &operator=(const basic_string &o)
         {
             if (this != &o)
@@ -174,12 +176,11 @@ namespace zstl
             return *this;
         }
 
-        // 移动赋值
         basic_string &operator=(basic_string &&o) noexcept
         {
             if (this != &o)
             {
-                allocator_type::deallocate(str_, capacity_ + 1);
+                traits_allocator::deallocate(alloc_, str_, capacity_ + 1);
                 str_ = o.str_;
                 size_ = o.size_;
                 capacity_ = o.capacity_;
@@ -199,16 +200,16 @@ namespace zstl
         {
             if (n > capacity_)
             {
-                CharT *tmp = allocator_type::allocate(n + 1);
+                value_type *tmp = traits_allocator::allocate(alloc_, n + 1);
                 Traits::copy(tmp, str_, size_ + 1);
-                allocator_type::deallocate(str_, capacity_ + 1);
+                traits_allocator::deallocate(alloc_, str_, capacity_ + 1);
                 str_ = tmp;
                 capacity_ = n;
             }
         }
 
         // 调整长度
-        void resize(size_type n, CharT c = CharT())
+        void resize(size_type n, value_type c = value_type())
         {
             if (n > size_)
             {
@@ -216,7 +217,7 @@ namespace zstl
                 Traits::fill(str_ + size_, c, n - size_);
             }
             size_ = n;
-            str_[size_] = CharT(0);
+            str_[size_] = value_type(0);
         }
 
         // 清空内容
@@ -224,50 +225,48 @@ namespace zstl
         {
             size_ = 0;
             if (str_)
-                Traits::fill(str_, CharT(0), 1);
+                Traits::fill(str_, value_type(0), 1);
         }
 
         // 下标访问
-        CharT &operator[](size_type p)
+        reference operator[](size_type p)
         {
             assert(p < size_);
             return str_[p];
         }
-        const CharT &operator[](size_type p) const
+        const_reference operator[](size_type p) const
         {
             assert(p < size_);
             return str_[p];
         }
 
-        CharT &front() { return operator[](0); }
-        const CharT &front() const { return operator[](0); }
-        CharT &back() { return operator[](size_ - 1); }
-        const CharT &back() const { return operator[](size_ - 1); }
-        const CharT *c_str() const noexcept { return str_; }
+        reference &front() { return operator[](0); }
+        const_reference front() const { return operator[](0); }
+        reference &back() { return operator[](size_ - 1); }
+        const_reference back() const { return operator[](size_ - 1); }
+        const_pointer c_str() const noexcept { return str_; }
 
-        // 追加字符
-        void push_back(CharT ch)
+        // 追加操作
+        void push_back(value_type ch)
         {
             if (size_ + 1 > capacity_)
                 reserve(capacity_ ? capacity_ * 2 : 4);
             str_[size_++] = ch;
-            str_[size_] = CharT(0);
+            str_[size_] = value_type(0);
         }
 
-        basic_string &operator+=(CharT ch)
+        basic_string &operator+=(value_type ch)
         {
             push_back(ch);
             return *this;
         }
-
-        basic_string &operator+=(const CharT *s)
+        basic_string &operator+=(const value_type *s)
         {
             append(s);
             return *this;
         }
 
-        // 追加字符串
-        void append(const CharT *s)
+        void append(const value_type *s)
         {
             size_type l = Traits::length(s);
             if (size_ + l > capacity_)
@@ -276,8 +275,7 @@ namespace zstl
             size_ += l;
         }
 
-        // 插入字符
-        void insert(size_type pos, CharT ch)
+        void insert(size_type pos, value_type ch)
         {
             assert(pos <= size_);
             if (size_ + 1 > capacity_)
@@ -287,8 +285,7 @@ namespace zstl
             ++size_;
         }
 
-        // 插入字符串
-        void insert(size_type pos, const CharT *s)
+        void insert(size_type pos, const_pointer s)
         {
             assert(pos <= size_);
             size_type l = Traits::length(s);
@@ -299,14 +296,13 @@ namespace zstl
             size_ += l;
         }
 
-        // 删除子串
         void erase(size_type pos, size_type len = npos)
         {
             assert(pos < size_);
             if (len == npos || pos + len >= size_)
             {
                 size_ = pos;
-                str_[pos] = CharT(0);
+                str_[pos] = value_type(0);
             }
             else
             {
@@ -320,7 +316,7 @@ namespace zstl
             if (size_)
             {
                 --size_;
-                str_[size_] = CharT(0);
+                str_[size_] = value_type(0);
             }
         }
 
@@ -332,7 +328,7 @@ namespace zstl
         }
 
         // 查找
-        size_type find(CharT ch, size_type pos = 0) const noexcept
+        size_type find(value_type ch, size_type pos = 0) const noexcept
         {
             for (; pos < size_; ++pos)
                 if (str_[pos] == ch)
@@ -340,7 +336,7 @@ namespace zstl
             return npos;
         }
 
-        size_type find(const CharT *s, size_type pos = 0) const noexcept
+        size_type find(const_pointer s, size_type pos = 0) const noexcept
         {
             size_type l = Traits::length(s);
             for (; pos + l <= size_; ++pos)
@@ -361,7 +357,7 @@ namespace zstl
             r.reserve(len);
             Traits::copy(r.str_, str_ + pos, len);
             r.size_ = len;
-            r.str_[len] = CharT(0);
+            r.str_[len] = value_type(0);
             return r;
         }
 
@@ -384,7 +380,7 @@ namespace zstl
         // I/O 操作
         friend std::istream &operator>>(std::istream &is, basic_string &str)
         {
-            CharT buf[4096];
+            value_type buf[4096];
             is >> buf;
             basic_string t(buf);
             str.swap(t);
@@ -399,9 +395,10 @@ namespace zstl
         }
 
     private:
-        CharT *str_ = nullptr;   // 数据存储指针
-        size_type size_ = 0;     // 当前元素数量
-        size_type capacity_ = 0; // 当前分配容量
+        value_type *str_ = nullptr; // 数据存储指针
+        size_type size_ = 0;        // 当前元素数量
+        size_type capacity_ = 0;    // 当前分配容量
+        allocator_type alloc_;      // 分配器实例
     };
 
     using string = basic_string<char>;
