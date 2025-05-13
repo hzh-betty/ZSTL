@@ -127,65 +127,113 @@ namespace zstl
         const_reverse_iterator rend() const noexcept { return const_reverse_iterator(begin()); }
 
     public:
-        // 构造、析构与赋值
-        basic_string()
-            : str_(traits_allocator::allocate(alloc_, 1)), size_(0), capacity_(0)
+        // 返回当前使用的分配器实例
+        allocator_type get_allocator() const noexcept { return alloc_; }
+
+        // 默认构造函数：使用指定或默认分配器，初始化空字符串
+        explicit basic_string(const allocator_type &alloc = allocator_type())
+            : alloc_(alloc), str_(traits_allocator::allocate(alloc_, 1)), size_(0), capacity_(0)
         {
+            // 设置终止符
             Traits::fill(str_, value_type(0), 1);
         }
 
-        basic_string(const value_type *s)
+        // C 风格字符串构造函数：深拷贝输入字符串
+        basic_string(const value_type *s, const allocator_type &alloc = allocator_type())
+            : alloc_(alloc)
         {
-            size_ = Traits::length(s);
-            capacity_ = size_;
-            str_ = traits_allocator::allocate(alloc_, capacity_ + 1);
-            Traits::copy(str_, s, size_ + 1);
+            size_ = Traits::length(s);                                // 计算长度
+            capacity_ = size_;                                        // 初始容量等于长度
+            str_ = traits_allocator::allocate(alloc_, capacity_ + 1); // 分配内存
+            Traits::copy(str_, s, size_ + 1);                         // 拷贝内容和终止符
         }
 
+        // 拷贝构造（带分配器参数）：使用指定分配器复制字符串内容
+        basic_string(const basic_string &o, const allocator_type &alloc)
+            : alloc_(alloc), size_(o.size_), capacity_(o.capacity_)
+        {
+            str_ = traits_allocator::allocate(alloc_, capacity_ + 1); // 分配内存
+            Traits::copy(str_, o.str_, size_ + 1);                    // 拷贝数据
+        }
+
+        // 拷贝构造：委托给带分配器版本，使用源对象的分配器
         basic_string(const basic_string &o)
-            : size_(o.size_), capacity_(o.capacity_)
+            : basic_string(o, o.get_allocator())
         {
-            str_ = traits_allocator::allocate(alloc_, capacity_ + 1);
-            Traits::copy(str_, o.str_, size_ + 1);
         }
 
-        basic_string(basic_string &&o) noexcept
-            : str_(o.str_), size_(o.size_), capacity_(o.capacity_)
+        // 移动构造（带分配器参数）：同分配器则窃取资源，否则重新分配并复制
+        basic_string(basic_string &&o, const allocator_type &alloc) noexcept
+            : alloc_(alloc), str_(nullptr), size_(0), capacity_(0)
         {
-            o.str_ = nullptr;
-            o.size_ = o.capacity_ = 0;
-        }
-
-        ~basic_string()
-        {
-            if (str_)
+            if (alloc_ == o.get_allocator())
             {
-                traits_allocator::deallocate(alloc_, str_, capacity_ + 1);
-                str_ = nullptr;
-                size_ = capacity_ = 0;
-            }
-        }
-
-        basic_string &operator=(const basic_string &o)
-        {
-            if (this != &o)
-            {
-                basic_string tmp(o);
-                swap(tmp);
-            }
-            return *this;
-        }
-
-        basic_string &operator=(basic_string &&o) noexcept
-        {
-            if (this != &o)
-            {
-                traits_allocator::deallocate(alloc_, str_, capacity_ + 1);
+                // 分配器相同，直接窃取指针
                 str_ = o.str_;
                 size_ = o.size_;
                 capacity_ = o.capacity_;
                 o.str_ = nullptr;
                 o.size_ = o.capacity_ = 0;
+            }
+            else
+            {
+                // 分配器不同，按新分配器重新复制数据
+                size_ = o.size_;
+                capacity_ = size_;
+                str_ = traits_allocator::allocate(alloc_, capacity_ + 1);
+                Traits::copy(str_, o.str_, size_ + 1);
+            }
+        }
+
+        // 移动构造：委托给带分配器版本
+        basic_string(basic_string &&o) noexcept
+            : basic_string(std::move(o), o.get_allocator())
+        {
+        }
+
+        // 析构：释放分配内存
+        ~basic_string() noexcept
+        {
+            if (str_)
+            {
+                traits_allocator::deallocate(alloc_, str_, capacity_ + 1);
+            }
+        }
+
+        // 拷贝赋值：按拷贝-交换范式实现
+        basic_string &operator=(const basic_string &o)
+        {
+            if (this != &o)
+            {
+                basic_string tmp(o, this->get_allocator());
+                swap(tmp);
+            }
+            return *this;
+        }
+
+        // 移动赋值：按分配器一致性处理资源
+        basic_string &operator=(basic_string &&o) noexcept
+        {
+            if (this != &o)
+            {
+                traits_allocator::deallocate(alloc_, str_, capacity_ + 1); // 释放现有内存
+                if (alloc_ == o.get_allocator())
+                {
+                    // 分配器相同，直接窃取资源
+                    str_ = o.str_;
+                    size_ = o.size_;
+                    capacity_ = o.capacity_;
+                    o.str_ = nullptr;
+                    o.size_ = o.capacity_ = 0;
+                }
+                else
+                {
+                    // 分配器不同，重新分配并拷贝数据
+                    size_ = o.size_;
+                    capacity_ = size_;
+                    str_ = traits_allocator::allocate(alloc_, capacity_ + 1);
+                    Traits::copy(str_, o.str_, size_ + 1);
+                }
             }
             return *this;
         }
@@ -200,7 +248,7 @@ namespace zstl
         {
             if (n > capacity_)
             {
-                value_type *tmp = traits_allocator::allocate(alloc_, n + 1);
+                pointer tmp = traits_allocator::allocate(alloc_, n + 1);
                 Traits::copy(tmp, str_, size_ + 1);
                 traits_allocator::deallocate(alloc_, str_, capacity_ + 1);
                 str_ = tmp;
@@ -240,10 +288,10 @@ namespace zstl
             return str_[p];
         }
 
-        reference &front() { return operator[](0); }
-        const_reference front() const { return operator[](0); }
-        reference &back() { return operator[](size_ - 1); }
-        const_reference back() const { return operator[](size_ - 1); }
+        reference &front() { return str_[0]; }
+        const_reference front() const { return str_[0]; }
+        reference &back() { return str_[size_ - 1]; }
+        const_reference back() const { return str_[size_ - 1]; }
         const_pointer c_str() const noexcept { return str_; }
 
         // 追加操作
@@ -285,7 +333,7 @@ namespace zstl
             ++size_;
         }
 
-        void insert(size_type pos, const_pointer s)
+        void insert(size_type pos, const value_type *s)
         {
             assert(pos <= size_);
             size_type l = Traits::length(s);
@@ -336,7 +384,7 @@ namespace zstl
             return npos;
         }
 
-        size_type find(const_pointer s, size_type pos = 0) const noexcept
+        size_type find(const value_type *s, size_type pos = 0) const noexcept
         {
             size_type l = Traits::length(s);
             for (; pos + l <= size_; ++pos)
@@ -395,10 +443,10 @@ namespace zstl
         }
 
     private:
-        value_type *str_ = nullptr; // 数据存储指针
-        size_type size_ = 0;        // 当前元素数量
-        size_type capacity_ = 0;    // 当前分配容量
-        allocator_type alloc_;      // 分配器实例
+        allocator_type alloc_;   // 分配器实例
+        pointer str_ = nullptr;  // 数据存储指针
+        size_type size_ = 0;     // 当前元素数量
+        size_type capacity_ = 0; // 当前分配容量
     };
 
     using string = basic_string<char>;

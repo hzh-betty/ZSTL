@@ -121,5 +121,15 @@ namespace zstl
         {
             zstl::Construct::destroy(first, last);
         }
+
+        // 对于无状态分配器，总认为所有实例相等
+        friend bool operator==(const alloc &lhs, const alloc &rhs) noexcept
+        {
+            return true;
+        }
+        friend bool operator!=(const alloc &lhs, const alloc &rhs) noexcept
+        {
+            return false;
+        }
     };
 }; // namespace zstl
