@@ -44,7 +44,7 @@ namespace zstl
         }
 
         // 范围销毁
-        alloc<zstl::string>::destroy(arr, arr + N);
+        alloc<zstl::string>::destroy_range(arr, arr + N);
         // 释放内存
         alloc<zstl::string>::deallocate(arr, N);
     }

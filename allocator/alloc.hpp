@@ -25,6 +25,17 @@ namespace zstl
             using other = alloc<U>;
         };
 
+        alloc() = default;
+        ~alloc() = default;
+        alloc(const alloc &) = default;
+        // 类型转换构造函数
+        template <typename U,
+                  typename = std::enable_if_t<!std::is_same_v<U, T>>>
+        alloc(const alloc<U> &) noexcept
+        {
+            // 无状态分配器无需复制任何状态
+        }
+
     public:
         // 分配单个对象的内存
         static T *allocate()
@@ -90,18 +101,6 @@ namespace zstl
             }
         }
 
-        // 原地构造：拷贝构造
-        static void construct(T *ptr, const T &value)
-        {
-            zstl::Construct::construct(ptr, value);
-        }
-
-        // 原地构造：移动构造
-        static void construct(T *ptr, T &&value)
-        {
-            zstl::Construct::construct(ptr, std::move(value));
-        }
-
         // 原地构造：完美转发任意参数
         template <class... Args>
         static void construct(T *ptr, Args &&...args)
@@ -117,9 +116,9 @@ namespace zstl
 
         // 析构区间内所有对象
         template <typename Iter>
-        static void destroy(Iter first, Iter last)
+        static void destroy_range(Iter first, Iter last)
         {
-            zstl::Construct::destroy(first, last);
+            zstl::Construct::destroy_range(first, last);
         }
 
         // 对于无状态分配器，总认为所有实例相等

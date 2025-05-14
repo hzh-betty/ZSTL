@@ -7,21 +7,6 @@ namespace zstl
     {
     public:
         // 就地构造 -- 即使类型平凡构造，也要在内存上写入默认或零值，必须调用 placement-new；
-
-        // 无参默认构造：在 ptr 指向的内存上调用 T() 构造函数
-        template <typename T>
-        static void construct(T *ptr)
-        {
-            ::new ((void *)ptr) T();
-        }
-
-        // 拷贝或转换构造：在 ptr 指向的内存上调用 T(value) 构造函数
-        template <typename T, typename U>
-        static void construct(T *ptr, const U &value)
-        {
-            ::new ((void *)ptr) T(value);
-        }
-
         // 完美转发构造：在 ptr 指向的内存上调用 T(args...)
         template <typename T, typename... Args>
         static void construct(T *ptr, Args &&...args)
@@ -42,7 +27,7 @@ namespace zstl
 
         // 范围析构：对[first, last)内的每个元素调用destroy
         template <typename ForwardIter>
-        static void destroy(ForwardIter first, ForwardIter last)
+        static void destroy_range(ForwardIter first, ForwardIter last)
         {
             using ValueType = typename iterator_traits<ForwardIter>::value_type;
             destroy_range_impl(first, last, std::is_trivially_destructible<ValueType>{});
