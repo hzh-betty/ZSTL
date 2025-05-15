@@ -21,14 +21,15 @@ namespace zstl
         using const_reference = const T &;
         using pointer = typename traits_allocator::pointer;
         using const_pointer = typename traits_allocator::const_pointer;
-        using size_type = typename traits_allocator::size_type;
-        using difference_type = typename traits_allocator::difference_type;
+        using size_type = size_t;
 
         // 用原始指针模拟迭代器
         using iterator = pointer;
         using const_iterator = const_pointer;
         using reverse_iterator = basic_reverse_iterator<iterator>;
         using const_reverse_iterator = basic_reverse_iterator<const_iterator>;
+
+        using difference_type = typename iterator_traits<iterator>::difference_type;
 
         // 反向迭代器
         reverse_iterator rbegin() { return reverse_iterator(end()); }

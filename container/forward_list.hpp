@@ -1,7 +1,8 @@
 #pragma once
 #include <iostream>
-#include"../iterator/reverse_iterator.hpp"
-
+#include "../iterator/reverse_iterator.hpp"
+#include "../allocator/alloc.hpp"
+#include "../allocator/memory.hpp"
 namespace zstl
 {
     // 单向链表节点定义
@@ -68,14 +69,27 @@ namespace zstl
     };
 
     // 自定义 forward_list 容器
-    template <typename T>
+    template <typename T, typename Alloc = alloc<T>>
     class forward_list
     {
-        using Node = ForwardListNode<T>;
-
     public:
         using iterator = ForwardListIterator<T, T &, T *>;
         using const_iterator = ForwardListIterator<T, const T &, const T *>;
+
+        using allocator_type = Alloc;
+        using traits_allocator = allocator_traits<allocator_type>;
+        using value_type = T;
+        using reference = value_type &;
+        using const_reference = const value_type &;
+        using pointer = typename traits_allocator::pointer;
+        using const_pointer = typename traits_allocator::const_pointer;
+        using size_type = size_t;
+        using difference_type = typename iterator_traits<iterator>::difference_type;
+
+        // 针对节点类型的分配器重绑定
+        using Node = ForwardListNode<value_type>;
+        using node_allocator_type = typename traits_allocator::template rebind_alloc<Node>;
+        using node_traits_alloc = allocator_traits<node_allocator_type>;
 
         // 获取头前迭代器（哨兵节点）
         iterator before_begin() { return iterator(header_); }
@@ -89,12 +103,12 @@ namespace zstl
         iterator end() { return iterator(nullptr); }
         const_iterator end() const { return const_iterator(nullptr); }
 
-
     public:
         // 构造：创建哨兵头节点
-        forward_list()
-            : header_(new Node(T()))
+        forward_list(const allocator_type &alloc = allocator_type())
+            : alloc_(alloc), node_alloc_(alloc_) // 同步节点分配器
         {
+            header_ = create_node(T());
         }
 
         // 析构：清空所有节点并删除头节点
@@ -103,20 +117,23 @@ namespace zstl
             if (header_)
             {
                 clear();
-                delete header_;
+                destroy_node(header_);
+
                 header_ = nullptr;
             }
         }
 
         // 复制构造：深拷贝链表数据
         forward_list(const forward_list &other)
-            : header_(new Node(T()))
+            : alloc_(other.alloc_),
+              node_alloc_(alloc_)
         {
+            header_ = create_node(T());
             Node *cur = other.header_->next_;
             Node *prev = header_;
             while (cur)
             {
-                Node *new_node = new Node(cur->data_);
+                Node *new_node = create_node(cur->data_);
                 prev->next_ = new_node;
                 prev = new_node;
                 cur = cur->next_;
@@ -136,7 +153,7 @@ namespace zstl
 
         // 移动构造函数
         forward_list(forward_list &&other) noexcept
-            : header_(other.header_)
+            : alloc_(std::move(other.alloc_)), node_alloc_(alloc_), header_(other.header_)
         {
             other.header_ = nullptr;
         }
@@ -147,7 +164,9 @@ namespace zstl
             if (this != &other)
             {
                 clear();
-                delete header_;
+                destroy_node(header_);
+                alloc_ = std::move(other.alloc_);
+                node_alloc_ = node_allocator_type(alloc_);
                 header_ = other.header_;
                 other.header_ = nullptr;
             }
@@ -156,12 +175,12 @@ namespace zstl
 
         // initializer_list 构造函数
         forward_list(std::initializer_list<T> il)
-            : header_(new Node(T()))
         {
+            header_ = create_node(T());
             Node *tail = header_;
             for (const auto &val : il)
             {
-                Node *new_node = new Node(val);
+                Node *new_node = create_node(val);
                 tail->next_ = new_node;
                 tail = new_node;
             }
@@ -171,7 +190,7 @@ namespace zstl
         template <typename... Args>
         iterator emplace_after(iterator pos, Args &&...args)
         {
-            Node *new_node = new Node(std::forward<Args>(args)...);
+            Node *new_node = create_node(std::forward<Args>(args)...);
             new_node->next_ = pos.node_->next_;
             pos.node_->next_ = new_node;
             return iterator(new_node);
@@ -184,7 +203,7 @@ namespace zstl
         // 在头部插入元素
         void push_front(const T &val)
         {
-            Node *new_node = new Node(val);
+            Node *new_node = create_node(val);
             new_node->next_ = header_->next_;
             header_->next_ = new_node;
         }
@@ -196,14 +215,14 @@ namespace zstl
             {
                 Node *tmp = header_->next_;
                 header_->next_ = tmp->next_;
-                delete tmp;
+                destroy_node(tmp);
             }
         }
 
         // 在指定位置之后插入元素，返回新节点迭代器
         iterator insert_after(iterator pos, const T &val)
         {
-            Node *new_node = new Node(val);
+            Node *new_node = create_node(val);
             new_node->next_ = pos.node_->next_;
             pos.node_->next_ = new_node;
             return iterator(new_node);
@@ -216,7 +235,8 @@ namespace zstl
             {
                 Node *tmp = pos.node_->next_;
                 pos.node_->next_ = tmp->next_;
-                delete tmp;
+                destroy_node(tmp);
+
                 return iterator(pos.node_->next_);
             }
             return end();
@@ -233,12 +253,33 @@ namespace zstl
         void swap(forward_list &other)
         {
             std::swap(header_->next_, other.header_->next_);
+            std::swap(alloc_, other.alloc_);
+            std::swap(node_alloc_, other.node_alloc_);
         }
 
         // 判断是否为空（仅检查首节点是否存在）
         bool empty() const { return header_->next_ == nullptr; }
 
     private:
-        Node *header_; // 哨兵头节点，不存储有效数据
+        // 创建节点：分配内存并调用构造
+        template <typename... Args>
+        Node *create_node(Args &&...args)
+        {
+            Node *p = node_traits_alloc::allocate(node_alloc_, 1);
+            node_traits_alloc::construct(node_alloc_, p, std::forward<Args>(args)...);
+            return p;
+        }
+
+        // 销毁节点：调用析构并释放内存
+        void destroy_node(Node *p)
+        {
+            node_traits_alloc::destroy(node_alloc_, p);
+            node_traits_alloc::deallocate(node_alloc_, p, 1);
+        }
+
+    private:
+        allocator_type alloc_;           // 用户传入或默认分配器
+        node_allocator_type node_alloc_; // 针对节点重绑定的分配器
+        Node *header_;                   // 哨兵头节点，不存储有效数据
     };
 }; // namespace zstl

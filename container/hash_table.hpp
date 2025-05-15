@@ -2,7 +2,7 @@
 #include <iostream>
 #include <utility>
 #include "vector.hpp"
-#include"../iterator/reverse_iterator.hpp"
+#include "../iterator/reverse_iterator.hpp"
 
 namespace zstl
 {
@@ -38,17 +38,17 @@ namespace zstl
     };
 
     // 前向声明哈希表模板
-    template <typename K, typename T, typename Hash, typename Compare>
+    template <typename K, typename T, typename Hash, typename Compare, typename Alloc>
     class HashTable;
 
     // 哈希表迭代器，用于遍历所有元素
     template <typename Key, typename Value, typename Ref, typename Ptr,
-              typename HashFunc, typename CompareFunc>
+              typename HashFunc, typename CompareFunc, typename Allocator>
     struct HashTableIterator
     {
         using Node = HashNode<Value>;
-        using HT = HashTable<Key, Value, HashFunc, CompareFunc>;
-        using Self = HashTableIterator<Key, Value, Ref, Ptr, HashFunc, CompareFunc>;
+        using HT = HashTable<Key, Value, HashFunc, CompareFunc, Allocator>;
+        using Self = HashTableIterator<Key, Value, Ref, Ptr, HashFunc, CompareFunc, Allocator>;
 
         // 迭代器萃取必需的五种类型
         using iterator_category = forward_iterator_tag;
@@ -64,7 +64,7 @@ namespace zstl
             : node_(node), ht_(ht) {}
 
         // 允许不同类型的迭代器转换
-        HashTableIterator(const HashTableIterator<Key, Value, Value &, Value *, HashFunc, CompareFunc> &it)
+        HashTableIterator(const HashTableIterator<Key, Value, Value &, Value *, HashFunc, CompareFunc, Allocator> &it)
             : node_(it.node_), ht_(it.ht_) {}
 
         // 获取节点数据
@@ -114,17 +114,27 @@ namespace zstl
     };
 
     // 哈希表主体
-    template <typename K, typename T, typename Hash, typename Compare>
+    template <typename K, typename T, typename Hash, typename Compare, typename Alloc>
     class HashTable
     {
         template <typename Key, typename Value, typename Ref, typename Ptr,
-                  typename HashFunc, typename CompareFunc>
+                  typename HashFunc, typename CompareFunc, typename Allocator>
         friend struct HashTableIterator;
         using Node = HashNode<T>;
 
     public:
-        using iterator = HashTableIterator<K, T, T &, T *, Hash, Compare>;
-        using const_iterator = HashTableIterator<K, T, const T &, const T *, Hash, Compare>;
+        using iterator = HashTableIterator<K, T, T &, T *, Hash, Compare, Alloc>;
+        using const_iterator = HashTableIterator<K, T, const T &, const T *, Hash, Compare, Alloc>;
+
+        using allocator_type = Alloc;
+        using traits_allocator = allocator_traits<allocator_type>;
+        using value_type = T;
+        using size_type = size_t;
+        using difference_type = typename iterator_traits<iterator>::difference_type;
+
+        // 针对节点类型的分配器重绑定
+        using node_allocator_type = typename traits_allocator::template rebind_alloc<Node>;
+        using node_traits_alloc = allocator_traits<node_allocator_type>;
 
         // 返回第一个元素与末尾的迭代器
         iterator begin()
@@ -160,7 +170,11 @@ namespace zstl
 
     public:
         // 默认构造与析构
-        HashTable() = default;
+        HashTable(const allocator_type &alloc = allocator_type())
+        {
+            this->alloc_ = alloc;
+            this->node_alloc_ = this->alloc_;
+        }
         ~HashTable() { clear(); }
         // 拷贝构造：按桶复制节点
         HashTable(const HashTable &ht)
@@ -171,20 +185,23 @@ namespace zstl
                 Node *cur = ht.tables_[i];
                 while (cur)
                 {
-                    Node *copy = new Node(cur->data_);
+                    Node *copy = create_node(cur->data_);
                     copy->next_ = tables_[i];
                     tables_[i] = copy;
                     cur = cur->next_;
                 }
             }
             size_ = ht.size_;
+            this->alloc_ = ht.alloc_;
+            this->node_alloc_ = this->alloc_;
         }
         // 赋值：交换
         HashTable &operator=(const HashTable &ht)
         {
             if (this != &ht)
             {
-                swap(ht);
+                HashTable tmp(ht);
+                swap(tmp);
             }
             return *this;
         }
@@ -193,6 +210,8 @@ namespace zstl
         HashTable(HashTable &&ht) noexcept
             : tables_(std::move(ht.tables_)), size_(ht.size_)
         {
+            this->alloc_ = std::move(ht.alloc_);
+            this->node_alloc_ = this->alloc_;
             ht.size_ = 0;
         }
         // 移动赋值运算符
@@ -200,6 +219,8 @@ namespace zstl
         {
             if (this != &ht)
             {
+                this->alloc_ = std::move(ht.alloc_);
+                this->node_alloc_ = this->alloc_;
                 clear();
                 tables_ = std::move(ht.tables_);
                 size_ = ht.size_;
@@ -228,7 +249,8 @@ namespace zstl
         template <typename... Args>
         std::pair<iterator, bool> emplace_unique(Args &&...args)
         {
-            Node *new_node = new Node(std::forward<Args>(args)...);
+            Node *new_node = create_node(std::forward<Args>(args)...);
+
             // 已存在则不插入
             auto it_pair = find(kov_(new_node->data_));
             if (it_pair != end())
@@ -251,7 +273,7 @@ namespace zstl
         template <typename... Args>
         iterator emplace_duplicate(Args &&...args)
         {
-            Node *new_node = new Node(std::forward<Args>(args)...);
+            Node *new_node = create_node(std::forward<Args>(args)...);
             // 负载因子 >= 1 时扩容
             if (size_ == tables_.size())
             {
@@ -314,7 +336,7 @@ namespace zstl
                     {
                         tables_[index] = cur->next_;
                     }
-                    delete cur;
+                    destroy_node(cur);
                     --size_;
                     break;
                 }
@@ -395,7 +417,7 @@ namespace zstl
                 while (head)
                 {
                     Node *next = head->next_;
-                    delete head;
+                    destroy_node(head);
                     head = next;
                 }
             }
@@ -407,6 +429,8 @@ namespace zstl
         {
             tables_.swap(ht.tables_);
             std::swap(size_, ht.size_);
+            std::swap(alloc_, ht.alloc_);
+            std::swap(node_alloc_, ht.node_alloc_);
         }
 
         // 扩容并重新哈希所有元素
@@ -452,11 +476,29 @@ namespace zstl
             return primeList[PRIMECOUNT - 1];
         }
 
+        // 创建节点
+        template <typename... Args>
+        Node *create_node(Args &&...args)
+        {
+            Node *newnode = node_traits_alloc::allocate(node_alloc_, 1);
+            node_traits_alloc::construct(node_alloc_, newnode, std::forward<Args>(args)...);
+            return newnode;
+        }
+
+        // 销毁节点
+        void destroy_node(Node *node)
+        {
+            node_traits_alloc::destroy(node_alloc_, node);
+            node_traits_alloc::deallocate(node_alloc_, node, 1);
+        }
+
     private:
-        vector<Node *> tables_; // 桶数组
-        size_t size_ = 0;       // 元素计数
-        UKeyOfValue kov_;       // 键提取器：从 value_type 中获取 key
-        Compare com_;           // 比较函数
+        allocator_type alloc_;           // 用户传入或默认分配器
+        node_allocator_type node_alloc_; // 针对节点重绑定的分配器
+        vector<Node *> tables_;          // 桶数组
+        size_t size_ = 0;                // 元素计数
+        UKeyOfValue kov_;                // 键提取器：从 value_type 中获取 key
+        Compare com_;                    // 比较函数
         Hash hash_;
     };
 

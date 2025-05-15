@@ -12,28 +12,36 @@ namespace zstl
     /**
      * @brief 通用关联容器模板，基于红黑树实现，支持set和map两种容器
      *
-     * @tparam Key        键类型
-     * @tparam Mapped     映射值类型。设为null_type时表示set容器
+     * @tparam key_type        键类型
+     * @tparam mapped_type     映射值类型。设为null_type时表示set容器
      * @tparam Compare    键比较函数对象类型
      * @tparam Unique     是否强制键唯一。true为类似std::set/map，false为类似multiset/map
      */
-    template <typename Key, typename Mapped, typename Compare, bool Unique>
+    template <typename Key, typename Mapped, typename Compare, typename Alloc, bool Unique>
     class assoc_tree
     {
     public:
-        // 根据Mapped类型决定值类型：set时为Key，map时为pair<const Key, Mapped>
+        using key_type = Key;
+        using mapped_type = Mapped;
+        using allocator_type = Alloc;
+        using traits_allocator = allocator_traits<allocator_type>;
+        using pointer = typename traits_allocator::pointer;
+        using const_pointer = typename traits_allocator::const_pointer;
+        using size_type = size_t;
+
+        // 根据Mapped类型决定值类型：set时为Key，map时为pair<const key_type, mapped_type>
         using value_type = std::conditional_t<
-            std::is_same_v<Mapped, tree_null_type>,
-            Key,
-            std::pair<const Key, Mapped>>;
+            std::is_same_v<mapped_type, tree_null_type>,
+            key_type,
+            std::pair<const key_type, mapped_type>>;
 
         // 底层红黑树类型
-        using tree_type = RBTree<Key, value_type, Compare>;
+        using tree_type = RBTree<key_type, value_type, Compare, Alloc>;
 
         // set容器使用const_iterator禁止修改键值，map使用普通iterator允许修改value部分
         using const_iterator = typename tree_type::const_iterator;
         using iterator = std::conditional_t<
-            std::is_same_v<Mapped, tree_null_type>,
+            std::is_same_v<mapped_type, tree_null_type>,
             const_iterator,
             typename tree_type::iterator>;
 
@@ -55,7 +63,11 @@ namespace zstl
 
     public:
         // 默认构造/拷贝/移动构造函数
-        assoc_tree() = default;
+        assoc_tree(const allocator_type&alloc = allocator_type())
+        :tree_(alloc)
+        {
+
+        }
         assoc_tree(const assoc_tree &) = default;
         assoc_tree &operator=(const assoc_tree &) = default;
         assoc_tree(assoc_tree &&) = default;
@@ -67,7 +79,8 @@ namespace zstl
          * @param il 包含初始元素的初始化列表
          * @details 逐个元素构造，允许重复元素的插入（取决于Unique参数）
          */
-        assoc_tree(std::initializer_list<value_type> il)
+        assoc_tree(std::initializer_list<value_type> il,const allocator_type&alloc = allocator_type())
+        :assoc_tree(alloc)
         {
             for (auto &e : il)
             {
@@ -80,20 +93,20 @@ namespace zstl
         size_t size() const noexcept { return tree_.size(); }
 
         /* 查找操作 */
-        iterator find(const Key &k) const { return tree_.find(k); }
+        iterator find(const key_type &k) const { return tree_.find(k); }
 
         // 范围查找
-        iterator lower_bound(const Key &k) { return tree_.lower_bound(k); }
-        iterator upper_bound(const Key &k) { return tree_.upper_bound(k); }
-        const_iterator lower_bound(const Key &k) const { return tree_.lower_bound(k); }
-        const_iterator upper_bound(const Key &k) const { return tree_.upper_bound(k); }
+        iterator lower_bound(const key_type &k) { return tree_.lower_bound(k); }
+        iterator upper_bound(const key_type &k) { return tree_.upper_bound(k); }
+        const_iterator lower_bound(const key_type &k) const { return tree_.lower_bound(k); }
+        const_iterator upper_bound(const key_type &k) const { return tree_.upper_bound(k); }
 
         // 获取键值范围
-        std::pair<iterator, iterator> equal_range(const Key &k)
+        std::pair<iterator, iterator> equal_range(const key_type &k)
         {
             return {lower_bound(k), upper_bound(k)};
         }
-        std::pair<const_iterator, const_iterator> equal_range(const Key &k) const
+        std::pair<const_iterator, const_iterator> equal_range(const key_type &k) const
         {
             return {lower_bound(k), upper_bound(k)};
         }
@@ -104,7 +117,7 @@ namespace zstl
          * @return size_t 键在容器中的出现次数
          * @note Unique=true时返回0或1，Unique=false时返回实际数量
          */
-        size_t count(const Key &key) const
+        size_t count(const key_type &key) const
         {
             auto p = equal_range(key);
             size_t cnt = 0;
@@ -123,7 +136,7 @@ namespace zstl
          * @return size_t 被删除的元素数量
          * @note Unique=true时最多删除1个元素，Unique=false时删除所有匹配元素
          */
-        size_t erase(const Key &k)
+        size_t erase(const key_type &k)
         {
             if constexpr (Unique)
             {
@@ -178,12 +191,12 @@ namespace zstl
         /**
          * @brief 下标访问运算符（仅适用于map且键唯一的情况）
          * @param key 要访问的键
-         * @return Mapped& 对应的映射值的引用
+         * @return mapped_type& 对应的映射值的引用
          * @note 如果键不存在，插入一个值初始化的元素
          */
-        template <typename M = Mapped, bool U = Unique>
+        template <typename M = mapped_type, bool U = Unique>
         std::enable_if_t<!std::is_same_v<M, tree_null_type> && U, M &>
-        operator[](const Key &key)
+        operator[](const key_type &key)
         {
             auto [it, inserted] = tree_.emplace_unique(key, M());
             return it->second;

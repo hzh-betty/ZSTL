@@ -191,8 +191,7 @@ namespace zstl
         using const_pointer = typename traits_allocator::const_pointer;
         using reference = T &;
         using const_reference = const T &;
-        using size_type = typename traits_allocator::size_type;
-        using difference_type = typename traits_allocator::difference_type;
+        using size_type = size_t;
         using map_allocator_type = typename traits_allocator::template rebind_alloc<buffer_type>;
         using map_traits_alloc = allocator_traits<map_allocator_type>;
 
@@ -201,6 +200,7 @@ namespace zstl
         using const_iterator = DequeIterator<T, const_pointer, const_reference>;
         using reverse_iterator = basic_reverse_iterator<iterator>;
         using const_reverse_iterator = basic_reverse_iterator<const_iterator>;
+        using difference_type = typename iterator_traits<iterator>::difference_type;
 
         // 迭代器接口
         iterator begin() noexcept { return start_; }

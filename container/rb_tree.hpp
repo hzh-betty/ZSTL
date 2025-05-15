@@ -1,8 +1,9 @@
 #pragma once
 #include <utility>
 #include <iostream>
-#include"../iterator/reverse_iterator.hpp"
-
+#include "../iterator/reverse_iterator.hpp"
+#include "../allocator/alloc.hpp"
+#include "../allocator/memory.hpp"
 namespace zstl
 {
     // 红黑树的颜色
@@ -465,11 +466,22 @@ namespace zstl
     };
 
     // 红黑树的基础操作
-    template <typename K, typename T, typename Compare>
+    template <typename K, typename T, typename Compare, typename Alloc>
     class RBTreeBase : public RBBalance<T>
     {
         using Node = RBNode<T>;
         using iterator = RBTreeIterator<T, T &, T *>;
+
+    public:
+        using allocator_type = Alloc;
+        using traits_allocator = allocator_traits<allocator_type>;
+        using value_type = T;
+        using size_type = size_t;
+        using difference_type = typename iterator_traits<iterator>::difference_type;
+
+        // 针对节点类型的分配器重绑定
+        using node_allocator_type = typename traits_allocator::template rebind_alloc<Node>;
+        using node_traits_alloc = allocator_traits<node_allocator_type>;
 
     protected:
         // 辅助插入节点
@@ -678,7 +690,8 @@ namespace zstl
         template <typename... Args>
         Node *create_node(Args &&...args)
         {
-            Node *newnode = new Node(std::forward<Args>(args)...);
+            Node *newnode = node_traits_alloc::allocate(node_alloc_, 1);
+            node_traits_alloc::construct(node_alloc_, newnode, std::forward<Args>(args)...);
             newnode->left_ = newnode->right_ = newnode->parent_ = nullptr;
             return newnode;
         }
@@ -686,21 +699,26 @@ namespace zstl
         // 销毁节点
         void destroy_node(Node *node)
         {
-            delete node;
+            node_traits_alloc::destroy(node_alloc_, node);
+            node_traits_alloc::deallocate(node_alloc_, node, 1);
         }
 
     protected:
-        KeyOfValue kov_; // 键提取器：从 value_type 中获取 key
-        Compare com_;    // 比较函数
+        allocator_type alloc_;           // 用户传入或默认分配器
+        node_allocator_type node_alloc_; // 针对节点重绑定的分配器
+        KeyOfValue kov_;                 // 键提取器：从 value_type 中获取 key
+        Compare com_;                    // 比较函数
     };
 
     // 红黑树
-    template <typename K, typename T, typename Compare>
-    class RBTree : public RBTreeBase<K, T, Compare>
+    template <typename K, typename T, typename Compare, typename Alloc>
+    class RBTree : public RBTreeBase<K, T, Compare, Alloc>
     {
         using Node = RBNode<T>;
 
     public:
+        using allocator_type = Alloc;
+
         // 迭代器
         using iterator = RBTreeIterator<T, T &, T *>;
         using const_iterator = RBTreeIterator<T, const T &, const T *>;
@@ -734,9 +752,11 @@ namespace zstl
 
     public:
         // 构造函数
-        RBTree()
+        RBTree(const allocator_type &alloc = allocator_type())
         {
             // 初始化header节点
+            this->alloc_ = alloc;
+            this->node_alloc_ = this->alloc_;
             init_header();
         }
 
@@ -744,6 +764,8 @@ namespace zstl
         RBTree(const RBTree &t)
         {
             // 拷贝构造时重建header结构
+            this->alloc_ = t.alloc_;
+            this->node_alloc_ = this->alloc_;
             init_header();
             this->header_->parent_ = copy(t.header_->parent_);
             adjust_header_pointers(this->header_->parent_);
@@ -756,7 +778,6 @@ namespace zstl
             if (this != &t)
             {
                 RBTree tmp(t);
-                clear();
                 swap(tmp);
             }
             return *this;
@@ -766,6 +787,8 @@ namespace zstl
         RBTree(RBTree &&other)
             : size_(other.size_)
         {
+            this->alloc_ = std::move(other.alloc_);
+            this->node_alloc_ = this->alloc_;
             this->header_ = other.header_;
             other.header_ = nullptr;
             other.size_ = 0;
@@ -780,6 +803,8 @@ namespace zstl
                 this->destroy_node(this->header_);
                 this->header_ = other.header_;
                 size_ = other.size_;
+                this->alloc_ = std::move(other.alloc_);
+                this->node_alloc_ = this->alloc_;
                 other.header_ = nullptr;
                 other.size_ = 0;
             }
@@ -956,6 +981,8 @@ namespace zstl
         {
             std::swap(this->header_, rb_tree.header_);
             std::swap(size_, rb_tree.size_);
+            std::swap(this->alloc_, rb_tree.alloc_);
+            std::swap(this->node_alloc_, rb_tree.node_alloc_);
         }
 
         // 清空节点
@@ -1002,7 +1029,7 @@ namespace zstl
                 return nullptr;
             }
             // 为新节点分配内存并拷贝原始节点的值
-            Node *newnode = new Node(root->data_);
+            Node *newnode = this->create_node(root->data_);
             // 递归拷贝左子树
             newnode->left_ = copy(root->left_);
             // 递归拷贝右子树

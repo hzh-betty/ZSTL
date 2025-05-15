@@ -105,8 +105,7 @@ namespace zstl
         using const_pointer = typename traits_allocator::const_pointer;
         using reference = value_type &;
         using const_reference = const value_type &;
-        using size_type = typename traits_allocator::size_type;
-        using difference_type = typename traits_allocator::difference_type;
+        using size_type = size_t;
 
         inline static const size_type npos = static_cast<size_type>(-1);
 
@@ -116,6 +115,7 @@ namespace zstl
         using const_iterator = const value_type *;
         using reverse_iterator = basic_reverse_iterator<iterator>;
         using const_reverse_iterator = basic_reverse_iterator<const_iterator>;
+        using difference_type = typename iterator_traits<iterator>::difference_type;
 
         iterator begin() noexcept { return str_; }
         const_iterator begin() const noexcept { return str_; }

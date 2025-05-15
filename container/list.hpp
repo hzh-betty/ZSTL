@@ -161,9 +161,8 @@ namespace zstl
         using const_reference = const T &;
         using pointer = typename traits_allocator::pointer;
         using const_pointer = typename traits_allocator::const_pointer;
-        using size_type = typename traits_allocator::size_type;
-        using difference_type = typename traits_allocator::difference_type;
-
+        using size_type = size_t;
+        
         // 针对节点类型的分配器重绑定
         using node_type = ListNode<T>;
         using node_allocator_type = typename traits_allocator::template rebind_alloc<node_type>;
@@ -175,6 +174,7 @@ namespace zstl
         using const_iterator = ListIterator<T, const T &, const T *>;
         using reverse_iterator = basic_reverse_iterator<iterator>;
         using const_reverse_iterator = basic_reverse_iterator<const_iterator>;
+        using difference_type = typename iterator_traits<iterator>::difference_type;
 
         // --------------- 迭代器接口 ---------------
         iterator begin() { return head_->next_; }
