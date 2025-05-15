@@ -2,18 +2,25 @@
 #include <iostream>
 #include <initializer_list>
 #include <cassert>
-#include"../iterator/reverse_iterator.hpp"
+#include "../iterator/reverse_iterator.hpp"
+#include "../allocator/alloc.hpp"
+#include "../allocator/memory.hpp"
 
 namespace zstl
 {
-    // T: 元素类型；Ptr: 指针类型；Ref: 引用类型；BufferSize: 每个缓冲区的大小
-    template <typename T, typename Ptr, typename Ref, size_t BufferSize>
+    inline constexpr size_t BufferSize = 25;
+    //--------------------------------------------------------------------------------
+    // deque 迭代器模板
+    // T: 元素类型；Ptr: 指针类型；Ref: 引用类型
+    // 支持随机访问，包括跨缓冲区跳转
+    //--------------------------------------------------------------------------------
+    template <typename T, typename Ptr, typename Ref>
     struct DequeIterator
     {
     private:
         using value_pointer = T *; // 元素指针类型
         using map_pointer = T **;  // 指向缓冲区指针的指针类型
-        using Self = DequeIterator<T, Ptr, Ref, BufferSize>;
+        using Self = DequeIterator<T, Ptr, Ref>;
 
     public:
         // 迭代器萃取必需的五种类型
@@ -46,36 +53,27 @@ namespace zstl
         }
 
         // 解引用运算符，返回当前元素的引用
-        Ref operator*() const
-        {
-            return *cur_;
-        }
+        Ref operator*() const { return *cur_; }
 
         // -> 运算符，返回当前元素指针
-        Ptr operator->() const
-        {
-            return cur_;
-        }
+        Ptr operator->() const { return cur_; }
 
         // 计算两个迭代器之间的距离（元素个数差）
-        int operator-(const Self &x) const
+        difference_type operator-(const Self &x) const
         {
-            if (*this == x)
-                return 0;
-            // 跨缓冲区距离 = 完整缓冲区数 * BufferSize + 本区偏移 + 对方区剩余
-            return int(BufferSize * (node_ - x.node_ - 1)) +
-                   (cur_ - first_) +
-                   (x.last_ - x.cur_);
+            if (node_ == x.node_)
+                return cur_ - x.cur_;
+            return BufferSize * (node_ - x.node_ - 1) + (cur_ - first_) + (x.last_ - x.cur_);
         }
 
         // 前置++：移动到下一个元素，若到达缓冲区末尾则跳到下一个缓冲区
         Self &operator++()
         {
             ++cur_;
-            if (cur_ == last_) // 到达本缓冲区末尾
+            if (cur_ == last_)
             {
-                set_node(node_ + 1); // 切换到下一个缓冲区
-                cur_ = first_;       // 指向下一区起始
+                set_node(node_ + 1);
+                cur_ = first_;
             }
             return *this;
         }
@@ -91,10 +89,10 @@ namespace zstl
         // 前置--：移动到前一个元素，若到达缓冲区起始则跳到前一个缓冲区末尾
         Self &operator--()
         {
-            if (cur_ == first_) // 在本区起始
+            if (cur_ == first_)
             {
-                set_node(node_ - 1); // 切换到前一个缓冲区
-                cur_ = last_ - 1;    // 指向该缓冲区最后一个元素
+                set_node(node_ - 1);
+                cur_ = last_ - 1;
             }
             else
             {
@@ -112,58 +110,55 @@ namespace zstl
         }
 
         // += 偏移 n 个位置：可能跨缓冲区
-        Self &operator+=(int n)
+        Self &operator+=(difference_type n)
         {
-            // 计算相对于 first_ 的新偏移
-            int offset = n + (cur_ - first_);
-            if (offset >= 0 && offset < BufferSize)
+            difference_type offset = n + (cur_ - first_);
+            if (offset >= 0 && offset < difference_type(BufferSize))
             {
-                // 仍在同一缓冲区内
                 cur_ += n;
             }
             else
             {
-                // 计算需要移动的缓冲区数（向下取整）
-                int offset_node = offset > 0 ? offset / int(BufferSize)
-                                             : (offset + 1) / int(BufferSize) - 1;
-                set_node(node_ + offset_node);                       // 切换缓冲区
-                cur_ = first_ + (offset - offset_node * BufferSize); // 定位新元素
+                difference_type node_offset =
+                    offset > 0 ? offset / BufferSize
+                               : (offset + 1) / BufferSize - 1;
+                set_node(node_ + node_offset);
+                cur_ = first_ + (offset - node_offset * BufferSize);
             }
             return *this;
         }
 
         // + 运算符，生成临时并调用 +=
-        Self operator+(int n) const
+        Self operator+(difference_type n) const
         {
             Self tmp(*this);
             return tmp += n;
         }
 
         // -= 运算符，调用 +=(-n)
-        Self &operator-=(int n)
+        Self &operator-=(difference_type n)
         {
-            return *this += (-n);
+            return *this += -n;
         }
 
         // - n 运算符
-        Self operator-(int n) const
+        Self operator-(difference_type n) const
         {
             Self tmp(*this);
-            return tmp += (-n);
+            return tmp += -n;
         }
 
         // 下标运算符，通过 +n 后解引用
-        Ref operator[](int n) const
+        Ref operator[](difference_type n) const
         {
             return *(*this + n);
         }
 
-        // 比较运算符，只比较 cur_ 或 node_
-        bool operator!=(const Self &s) const { return cur_ != s.cur_; }
+        // 比较运算符，只比较 node_ 和 cur_
         bool operator==(const Self &s) const { return cur_ == s.cur_; }
+        bool operator!=(const Self &s) const { return !(*this == s); }
         bool operator<(const Self &s) const
         {
-            // 同一缓冲区比较 cur_
             return node_ == s.node_ ? cur_ < s.cur_ : node_ < s.node_;
         }
         bool operator>=(const Self &s) const { return !(*this < s); }
@@ -176,194 +171,219 @@ namespace zstl
         map_pointer node_;    // 指向中控数组中缓冲区指针的位置
     };
 
-    // Deque 容器实现
-    template <typename T, size_t BufferSize = 25>
+    //--------------------------------------------------------------------------------
+    // deque 容器，实现双端队列，支持随机访问
+    // 包含自定义分配器支持
+    //--------------------------------------------------------------------------------
+    template <typename T, typename Alloc = std::allocator<T>>
     class deque
     {
     private:
-        using pointer = T *;
-        using map_pointer = pointer *;
+        using buffer_type = T *;
+        using map_pointer = buffer_type *;
 
     public:
-        using iterator = DequeIterator<T, T *, T &, BufferSize>;
-        using const_iterator = DequeIterator<T, const T *, const T &, BufferSize>;
+        // 类型重定义
+        using value_type = T;
+        using allocator_type = Alloc;
+        using traits_allocator = allocator_traits<allocator_type>;
+        using pointer = typename traits_allocator::pointer;
+        using const_pointer = typename traits_allocator::const_pointer;
+        using reference = T &;
+        using const_reference = const T &;
+        using size_type = typename traits_allocator::size_type;
+        using difference_type = typename traits_allocator::difference_type;
+        using map_allocator_type = typename traits_allocator::template rebind_alloc<buffer_type>;
+        using map_traits_alloc = allocator_traits<map_allocator_type>;
 
-        // 返回首尾迭代器
-        iterator begin() { return start_; }
-        iterator end() { return finish_; }
-        const_iterator begin() const { return start_; }
-        const_iterator end() const { return finish_; }
-
-        // 反向迭代器
+    public:
+        using iterator = DequeIterator<T, pointer, reference>;
+        using const_iterator = DequeIterator<T, const_pointer, const_reference>;
         using reverse_iterator = basic_reverse_iterator<iterator>;
-        using const_reverse_iterator = basic_reverse_iterator<iterator>;
+        using const_reverse_iterator = basic_reverse_iterator<const_iterator>;
 
-        reverse_iterator rbegin()  { return reverse_iterator(end()); }
-        reverse_iterator rend()  { return reverse_iterator(begin()); }
-        const_reverse_iterator rbegin() const  { return const_reverse_iterator(end()); }
-        const_reverse_iterator rend() const  { return const_reverse_iterator(begin()); }
+        // 迭代器接口
+        iterator begin() noexcept { return start_; }
+        iterator end() noexcept { return finish_; }
+        const_iterator begin() const noexcept { return start_; }
+        const_iterator end() const noexcept { return finish_; }
+        reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+        reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+        const_reverse_iterator rbegin() const noexcept { return const_reverse_iterator(end()); }
+        const_reverse_iterator rend() const noexcept { return const_reverse_iterator(begin()); }
 
     public:
-        // 默认构造：创建空的 map 和一个缓冲区
-        deque() { create_map(0); }
+        // 默认构造：创建至少一个缓冲区
+        deque(const allocator_type &alloc = allocator_type())
+            : alloc_(alloc), map_alloc_(alloc_), map_(nullptr), map_size_(0)
+        {
+            create_map(0);
+        }
 
         // 列表初始化
-        deque(std::initializer_list<T> it)
+        deque(std::initializer_list<T> il, const allocator_type &alloc = allocator_type())
+            : alloc_(alloc), map_alloc_(alloc_)
         {
-            create_map(it.size()); // 根据元素数分配缓冲区
-            iterator iter = start_;
-            for (auto &e : it)
+            create_map(il.size());
+            iterator tmp = start_;
+            for (auto &v : il)
             {
-                *iter = e; // 逐个拷贝元素
-                ++iter;
+                traits_allocator::construct(alloc_, tmp.cur_, v);
+                ++tmp;
             }
         }
 
         // 指定大小和初始值
-        deque(size_t n, const T &val)
+        deque(size_type n, const value_type &val, const allocator_type &alloc = allocator_type())
+            : alloc_(alloc), map_alloc_(alloc_)
         {
             create_map(n);
-            iterator iter = start_;
-            while (iter != finish_)
+            for (auto it = start_; it != finish_; ++it)
             {
-                *iter = val; // 初始化每个位置
-                ++iter;
+                traits_allocator::construct(alloc_, it.cur_, val);
             }
         }
 
-        // 拷贝构造：从另一个 deque 逐元素 push_back
-        deque(const deque &d)
+        // 拷贝构造：允许有状态分配器策略
+        deque(const deque &other)
+            : alloc_(other.alloc_), map_alloc_(alloc_)
         {
-            create_map(0);
-            iterator iter = d.start_;
-            while (iter != d.finish_)
-            {
-                push_back(*iter);
-                ++iter;
-            }
+            create_map(other.size());
+            std::copy(other.begin(), other.end(), start_);
         }
 
-        // 赋值运算符：拷贝-交换习惯用法
-        deque<T> &operator=(const deque &d)
+        // 移动构造：noexcept
+        deque(deque &&other) noexcept
+            : alloc_(std::move(other.alloc_)), map_alloc_(alloc_),
+              start_(other.start_), finish_(other.finish_), map_(other.map_), map_size_(other.map_size_)
         {
-            if (this != &d)
+            other.map_ = nullptr;
+            other.start_ = other.finish_ = iterator();
+            other.map_size_ = 0;
+        }
+
+        // 赋值运算符：拷贝-交换与移动赋值(noexcept)
+        deque &operator=(const deque &other)
+        {
+            if (this != &other)
             {
-                deque<T> tmp(d);
+                deque tmp(other);
                 swap(tmp);
             }
             return *this;
         }
-
-        // 移动构造：直接拿走对方资源，置空对方
-        deque(deque &&d)
-            : start_(d.start_), finish_(d.finish_), map_(d.map_), map_size_(d.map_size_)
+        deque &operator=(deque &&other) noexcept
         {
-            d.start_ = d.finish_ = iterator();
-            d.map_ = nullptr;
-            d.map_size_ = 0;
-        }
-
-        // 移动赋值：释放自身资源，再抢占对方资源
-        deque &operator=(deque &&d)
-        {
-            if (this != &d)
+            if (this != &other)
             {
                 clear();
-                delete[] map_;
-                start_ = d.start_;
-                finish_ = d.finish_;
-                map_ = d.map_;
-                map_size_ = d.map_size_;
-                d.start_ = d.finish_ = iterator();
-                d.map_ = nullptr;
-                d.map_size_ = 0;
+                map_traits_alloc::deallocate(map_alloc_, map_, map_size_);
+                alloc_ = std::move(other.alloc_);
+                map_alloc_ = map_allocator_type(alloc_);
+                start_ = other.start_;
+                finish_ = other.finish_;
+                map_ = other.map_;
+                map_size_ = other.map_size_;
+                other.map_ = nullptr;
+                other.start_ = other.finish_ = iterator();
+                other.map_size_ = 0;
             }
             return *this;
+        }
+
+        // 析构：释放缓冲区与 map
+        ~deque()
+        {
+            if (map_)
+            {
+                clear();
+                map_traits_alloc::deallocate(map_alloc_, map_, map_size_);
+            }
+        }
+
+        // 容量与访问
+        bool empty() const noexcept { return start_ == finish_; }
+        size_type size() const noexcept { return finish_ - start_; }
+        reference front()
+        {
+            assert(!empty());
+            return *start_;
+        }
+        const_reference front() const
+        {
+            assert(!empty());
+            return *start_;
+        }
+        reference back()
+        {
+            assert(!empty());
+            return *(finish_ - 1);
+        }
+        const_reference back() const
+        {
+            assert(!empty());
+            return *(finish_ - 1);
+        }
+
+        // 下标访问
+        reference operator[](size_type pos)
+        {
+            assert(pos < size());
+            return start_[pos];
+        }
+        const_reference operator[](size_type pos) const
+        {
+            assert(pos < size());
+            return start_[pos];
         }
 
         /** 在前端原地构造 */
         template <typename... Args>
         void emplace_front(Args &&...args)
         {
-            if (start_.cur_ != start_.first_)
+            bool expanded = check_map_size(); // 检查并扩展中控数组
+            if (start_.cur_ == start_.first_)
             {
-                new (start_.cur_ - 1) T(std::forward<Args>(args)...);
-                --start_.cur_;
+                // 扩展后分配新缓冲区
+                *(start_.node_ - 1) = traits_allocator::allocate(alloc_, BufferSize);
             }
-            else
-            {
-                bool expanded = check_map_size();
-                if (expanded)
-                    *(start_.node_ - 1) = new T[BufferSize];
-                start_.set_node(start_.node_ - 1);
-                start_.cur_ = start_.last_ - 1;
-                new (start_.cur_) T(std::forward<Args>(args)...);
-            }
+            --start_;
+            traits_allocator::construct(alloc_, start_.cur_, std::forward<Args>(args)...);
         }
 
         // 原地构造新元素到末尾
         template <typename... Args>
         void emplace_back(Args &&...args)
         {
-            if (finish_.cur_ != finish_.last_) // 当前缓冲区还有空间
+            // 直接在当前位置构造对象
+            traits_allocator::construct(alloc_, finish_.cur_, std::forward<Args>(args)...);
+            bool expanded = check_map_size(); // 检查并扩展中控数组
+            if (finish_.cur_ == finish_.last_ - 1)
             {
-                // 直接在当前位置构造对象
-                new (finish_.cur_) T(std::forward<Args>(args)...);
-                ++finish_.cur_;
+                // 扩展后分配新缓冲区
+                *(finish_.node_ + 1) = traits_allocator::allocate(alloc_, BufferSize);
             }
-            else // 当前缓冲区已满，需要新的缓冲区
-            {
-                bool expanded = check_map_size(); // 检查并扩展中控数组
-                if (expanded)
-                {
-                    // 扩展后分配新缓冲区
-                    *(finish_.node_ + 1) = new T[BufferSize];
-                }
-                // 切换到下一个缓冲区节点
-                finish_.set_node(finish_.node_ + 1);
-                finish_.cur_ = finish_.first_;
-                // 构造新元素
-                new (finish_.cur_) T(std::forward<Args>(args)...);
-                ++finish_.cur_;
-            }
+
+            ++finish_;
         }
 
-        // 访问首元素，空则断言
-        T &front()
-        {
-            assert(!empty());
-            return *start_;
-        }
-        const T &front() const
-        {
-            assert(!empty());
-            return *start_;
-        }
-        // 访问尾元素
-        T &back()
-        {
-            assert(!empty());
-            return *(finish_ - 1);
-        }
-        const T &back() const
-        {
-            assert(!empty());
-            iterator tmp = finish_;
-            return *(tmp - 1);
-        }
+        // push_back / push_front / pop_back / pop_front
+        void push_back(const value_type &val) { emplace_back(val); }
+        void push_front(const value_type &val) { emplace_front(val); }
+        void pop_back() { erase(end() - 1); }
+        void pop_front() { erase(begin()); }
 
         // 在 pos 插入左值，逻辑同上，仅拷贝而非移动
-        iterator insert(iterator pos, const T &val)
+        iterator insert(iterator pos, const value_type &val)
         {
-            assert(pos >= begin() && pos <= end());
-            size_t index = pos - start_;
-            size_t sz = size();
+            size_type index = pos - start_;
+            size_type sz = size();
             bool expanded = check_map_size();
             iterator iter;
             if (index < sz / 2)
             {
-                if (expanded)
-                    *(start_.node_ - 1) = new T[BufferSize];
+                if (start_.cur_ == start_.first_)
+                    *(start_.node_ - 1) = traits_allocator::allocate(alloc_, BufferSize);
                 iter = start_ - 1;
                 while (iter + 1 != pos)
                 {
@@ -374,8 +394,9 @@ namespace zstl
             }
             else
             {
-                if (expanded)
-                    *(finish_.node_ + 1) = new T[BufferSize];
+                if (finish_.cur_ == finish_.last_ - 1)
+                    *(finish_.node_ + 1) = traits_allocator::allocate(alloc_, BufferSize);
+
                 iter = finish_;
                 while (iter != pos)
                 {
@@ -392,8 +413,8 @@ namespace zstl
         iterator erase(iterator pos)
         {
             assert(pos >= begin() && pos < end() && !empty());
-            size_t index = pos - start_;
-            size_t sz = size();
+            size_type index = pos - start_;
+            size_type sz = size();
             iterator iter;
 
             if (index < sz / 2) // 前半段，向前覆盖
@@ -418,73 +439,65 @@ namespace zstl
             }
             return start_ + index;
         }
-
-        // push_back / push_front / pop_back / pop_front
-        void push_back(const T &val) { insert(end(), val); }
-        void push_front(const T &val) { insert(begin(), val); }
-        void pop_back() { erase(end() - 1); }
-        void pop_front() { erase(begin()); }
-
         // 调整大小：缩小则移动 finish_，扩大则 push_back
-        void resize(size_t n, const T &val = T())
+        void resize(size_t n, const value_type &val = T())
         {
             if (n < size())
-                finish_ = start_ + n;
+            {
+                while (size() > n)
+                    pop_back();
+            }
             else
+            {
                 while (size() < n)
                     push_back(val);
+            }
         }
 
-        // 下标访问
-        T &operator[](size_t pos)
-        {
-            assert(pos < size());
-            return start_[pos];
-        }
-        const T &operator[](size_t pos) const
-        {
-            assert(pos < size());
-            return start_[pos];
-        }
-
-        // 大小与空判断
-        size_t size() const { return finish_ - start_; }
-        bool empty() const { return start_ == finish_; }
-
-        // 清空所有元素，重置为单区状态
         void clear()
         {
-            for (map_pointer node = start_.node_; node <= finish_.node_; ++node)
-                delete[] *node; // 释放每个缓冲区数组
-
-            map_pointer center = map_ + map_size_ / 2;
-            *center = new T[BufferSize]; // 新建单个缓冲区
-            start_.set_node(center);
-            start_.cur_ = start_.first_;
-            finish_ = start_;
+            traits_allocator::destroy_range(alloc_, start_, finish_);
+            for (map_pointer p = start_.node_; p <= finish_.node_; ++p)
+            {
+                traits_allocator::deallocate(alloc_, *p, BufferSize);
+            }
+            create_map(0);
         }
 
-        // 交换两者底层指针与状态
-        void swap(deque<T> &d)
+        void swap(deque &d) noexcept
         {
             std::swap(start_, d.start_);
             std::swap(finish_, d.finish_);
             std::swap(map_, d.map_);
             std::swap(map_size_, d.map_size_);
-        }
-
-        // 析构：释放所有缓冲区与中控数组
-        ~deque()
-        {
-            if (map_)
-            {
-                for (map_pointer node = start_.node_; node <= finish_.node_; ++node)
-                    delete[] *node;
-                delete[] map_;
-            }
+            std::swap(alloc_, d.alloc_);
+            std::swap(map_alloc_, d.map_alloc_);
         }
 
     private:
+        // 创建中控数组及缓冲区
+        void create_map(size_type n)
+        {
+            // 计算需要的节点数与中控数组大小
+            size_type nodes = n / BufferSize + 1;
+            map_size_ = nodes < 8 ? 8 : nodes + 2;
+            map_ = map_traits_alloc::allocate(map_alloc_, map_size_);
+
+            // 居中分配节点区间
+            map_pointer nstart = map_ + (map_size_ - nodes) / 2;
+            map_pointer nfinish = nstart + nodes - 1;
+            for (map_pointer p = nstart; p <= nfinish; ++p)
+            {
+                *p = traits_allocator::allocate(alloc_, BufferSize); // 为每个节点分配缓冲区数组
+            }
+
+            // 设置 start_ / finish_
+            start_.set_node(nstart);
+            finish_.set_node(nfinish);
+            start_.cur_ = start_.first_;
+            finish_.cur_ = finish_.first_ + (n % BufferSize);
+        }
+
         // 检查中控数组边界，触发扩容返回 true
         bool check_map_size()
         {
@@ -498,12 +511,12 @@ namespace zstl
         }
 
         // 扩展中控数组及其缓冲区容量
-        void expanse_capacity(size_t add_num)
+        void expanse_capacity(size_type add_num)
         {
-            size_t old_nodes = finish_.node_ - start_.node_ + 1;              // 旧节点数
-            size_t new_nodes = old_nodes + add_num;                           // 扩展后节点数
-            size_t new_map_sz = map_size_ + std::max(map_size_, add_num) + 2; // 新 map 大小
-            map_pointer new_map = new pointer[new_map_sz];                    // 分配新中控数组
+            size_type old_nodes = finish_.node_ - start_.node_ + 1;                   // 旧节点数
+            size_type new_nodes = old_nodes + add_num;                                // 扩展后节点数
+            size_type new_map_sz = map_size_ + std::max(map_size_, add_num) + 2;      // 新 map 大小
+            map_pointer new_map = map_traits_alloc::allocate(map_alloc_, new_map_sz); // 分配新中控数组
             map_pointer new_start = new_map + (new_map_sz - new_nodes) / 2;
             map_pointer new_finish = new_start + old_nodes - 1;
 
@@ -512,7 +525,7 @@ namespace zstl
             for (map_pointer src = start_.node_; src != finish_.node_ + 1; ++src)
                 *dst++ = *src;
 
-            delete[] map_; // 释放旧中控数组
+            map_traits_alloc::deallocate(map_alloc_, map_, map_size_);
             map_ = new_map;
             map_size_ = new_map_sz;
             // 更新 start_ 和 finish_ 的 node、first、last
@@ -520,31 +533,12 @@ namespace zstl
             finish_.set_node(new_finish);
         }
 
-        // 创建初始中控数组和缓冲区
-        void create_map(size_t n)
-        {
-            // 计算需要的节点数与中控数组大小
-            size_t nodes = n / BufferSize + 1;
-            map_size_ = nodes < 8 ? 8 : nodes + 2;
-            map_ = new pointer[map_size_];
-
-            // 居中分配节点区间
-            map_pointer nstart = map_ + (map_size_ - nodes) / 2;
-            map_pointer nfinish = nstart + nodes - 1;
-            for (map_pointer p = nstart; p <= nfinish; ++p)
-                *p = new T[BufferSize]; // 为每个节点分配缓冲区数组
-
-            // 设置 start_ / finish_
-            start_.set_node(nstart);
-            finish_.set_node(nfinish);
-            start_.cur_ = start_.first_;
-            finish_.cur_ = finish_.first_ + (n % BufferSize);
-        }
-
     private:
-        iterator start_;  // 起始迭代器
-        iterator finish_; // 末尾迭代器
-        map_pointer map_; // 中控数组指针
-        size_t map_size_; // 中控数组大小
+        allocator_type alloc_;         // 用户分配器
+        map_allocator_type map_alloc_; // map 数组分配器
+        iterator start_;               // 起始迭代器
+        iterator finish_;              // 结束迭代器
+        map_pointer map_;              // 中控数组指针
+        size_type map_size_;           // 中控数组大小
     };
-};
+}

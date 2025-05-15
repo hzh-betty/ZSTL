@@ -292,7 +292,7 @@ namespace zstl
                 pop_front();
         }
 
-        void push_front(const T &val) {insert(begin(), val); }
+        void push_front(const T &val) { insert(begin(), val); }
         void push_back(const T &val) { emplace_back(val); }
         void pop_back() { erase(--end()); }
         void pop_front() { erase(begin()); }
