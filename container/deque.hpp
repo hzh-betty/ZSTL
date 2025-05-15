@@ -175,7 +175,7 @@ namespace zstl
     // deque 容器，实现双端队列，支持随机访问
     // 包含自定义分配器支持
     //--------------------------------------------------------------------------------
-    template <typename T, typename Alloc = std::allocator<T>>
+    template <typename T, typename Alloc = alloc<T>>
     class deque
     {
     private:
