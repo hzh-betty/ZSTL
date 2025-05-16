@@ -1,0 +1,81 @@
+### 编译生成文件和构建目录 ###
+# 对象文件/依赖文件
+*.o
+*.obj
+*.d
+*.a
+*.so
+*.lo
+*.la
+*.ilk
+*.exe
+
+# 构建目录（CMake、Autotools等生成）
+/build/
+/CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+
+# 自动生成的文件（如Qt的moc/uic生成）
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+
+### 系统临时文件（Linux/Ubuntu） ###
+*~
+.fuse_hidden*
+.nfs*
+.swp
+.swo
+.DS_Store
+.directory
+.Trash-*
+*.stackdump
+
+### IDE和编辑器配置文件 ###
+# Visual Studio Code
+.vscode/
+.vscode/*
+!.vscode/settings.json  # 若需保留部分配置可取消注释
+
+# CLion
+.idea/
+cmake-build-*/
+
+# 其他编辑器
+*.kdev4
+.kdev4/*
+tags
+.gdb_history
+
+### 日志和调试文件 ###
+*.log
+*.out
+*.pid
+*.core
+*.dmp
+
+### 包管理器和依赖项 ###
+# Conan
+.conan/
+conanbuildinfo/
+
+# vcpkg
+vcpkg_installed/
+
+### 测试和覆盖率报告 ###
+*.gcda
+*.gcno
+coverage/
+test_output/
+
+### 其他生成文件 ###
+# 预编译头文件
+*.gch
+*.pch
+
+# 压缩包
+*.tar.gz
+*.zip
