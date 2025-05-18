@@ -405,7 +405,7 @@ namespace zstl
                 }
                 ++finish_;
             }
-            *iter = val;
+            traits_allocator::construct(alloc_, iter.cur_, val);
             return iter;
         }
 
@@ -461,7 +461,11 @@ namespace zstl
             {
                 traits_allocator::deallocate(alloc_, *p, BufferSize);
             }
-            create_map(0);
+            map_pointer center = map_ + map_size_ / 2;
+            *center = traits_allocator::allocate(alloc_, BufferSize); // 新建单个缓冲区
+            start_.set_node(center);
+            start_.cur_ = start_.first_;
+            finish_ = start_;
         }
 
         void swap(deque &d) noexcept
