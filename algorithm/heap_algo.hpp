@@ -28,6 +28,7 @@ namespace zstl
         zstl::adjust_up(first, last, std::less<typename zstl::iterator_traits<RandomIt>::value_type>());
     }
 
+    // 插入元素，调整堆
     template <class RandomIt, class Compare>
     void push_heap(RandomIt first, RandomIt last, Compare comp)
     {
@@ -72,6 +73,7 @@ namespace zstl
         zstl::adjust_down(first, last - 1, 0, std::less<T>());
     }
 
+    // 弹出堆顶元素，调整堆
     template <class RandomIt, class Compare>
     void pop_heap(RandomIt first, RandomIt last, Compare comp)
     {
