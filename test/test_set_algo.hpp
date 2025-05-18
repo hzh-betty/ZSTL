@@ -1,3 +1,4 @@
+#pragma once  
 #include <gtest/gtest.h>
 #include "../algorithm/set_algo.hpp"
 #include "../container/vector.hpp"

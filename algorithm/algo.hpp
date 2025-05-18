@@ -170,7 +170,7 @@ namespace zstl
     {
         const auto len1 = last1 - first1;
         const auto len2 = last2 - first2;
-        const int result = std::memcmp(first1, first2, std::min(len1, len2));
+        const int result = std::memcmp(first1, first2, zstl::min(len1, len2));
         return result < 0 || (result == 0 && len1 < len2);
     }
 
