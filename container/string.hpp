@@ -5,7 +5,7 @@
 #include "../iterator/reverse_iterator.hpp"
 #include "../allocator/alloc.hpp"
 #include "../allocator/memory.hpp"
-
+#include "../algorithm/algo.hpp"
 namespace zstl
 {
     // 通用字符特性模板，提供字符类型的基本操作
@@ -370,9 +370,9 @@ namespace zstl
 
         void swap(basic_string &o) noexcept
         {
-            std::swap(str_, o.str_);
-            std::swap(size_, o.size_);
-            std::swap(capacity_, o.capacity_);
+            zstl::swap(str_, o.str_);
+            zstl::swap(size_, o.size_);
+            zstl::swap(capacity_, o.capacity_);
         }
 
         // 查找
@@ -412,7 +412,7 @@ namespace zstl
         // 比较运算符
         bool operator<(const basic_string &s) const noexcept
         {
-            size_type m = std::min(size_, s.size_);
+            size_type m = zstl::min(size_, s.size_);
             int c = Traits::compare(str_, s.str_, m);
             return c < 0 || (c == 0 && size_ < s.size_);
         }

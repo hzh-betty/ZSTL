@@ -252,9 +252,9 @@ namespace zstl
         // 与另一个列表交换节点
         void swap(forward_list &other)
         {
-            std::swap(header_->next_, other.header_->next_);
-            std::swap(alloc_, other.alloc_);
-            std::swap(node_alloc_, other.node_alloc_);
+            zstl::swap(header_->next_, other.header_->next_);
+            zstl::swap(alloc_, other.alloc_);
+            zstl::swap(node_alloc_, other.node_alloc_);
         }
 
         // 判断是否为空（仅检查首节点是否存在）

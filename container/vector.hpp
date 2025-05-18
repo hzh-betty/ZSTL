@@ -5,7 +5,7 @@
 #include "../iterator/reverse_iterator.hpp"
 #include "../allocator/alloc.hpp"
 #include "../allocator/memory.hpp"
-
+#include "../algorithm/algo.hpp"
 namespace zstl
 {
     template <typename T, typename Alloc = alloc<T>>
@@ -285,9 +285,9 @@ namespace zstl
         // 交换两个 vector 内部数据的指针，效率高，不需要复制元素
         void swap(vector &v)
         {
-            std::swap(start_, v.start_);
-            std::swap(finish_, v.finish_);
-            std::swap(end_of_storage_, v.end_of_storage_);
+            zstl::swap(start_, v.start_);
+            zstl::swap(finish_, v.finish_);
+            zstl::swap(end_of_storage_, v.end_of_storage_);
         }
 
         // 清空 vector 中的所有元素（不释放内存，仅重置结束指针）

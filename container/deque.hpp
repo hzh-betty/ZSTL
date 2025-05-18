@@ -5,7 +5,7 @@
 #include "../iterator/reverse_iterator.hpp"
 #include "../allocator/alloc.hpp"
 #include "../allocator/memory.hpp"
-
+#include "../algorithm/algo.hpp"
 namespace zstl
 {
     inline constexpr size_t BufferSize = 25;
@@ -249,7 +249,7 @@ namespace zstl
             : alloc_(other.alloc_), map_alloc_(alloc_)
         {
             create_map(other.size());
-            std::copy(other.begin(), other.end(), start_);
+            zstl::copy(other.begin(), other.end(), start_);
         }
 
         // 移动构造：noexcept
@@ -470,12 +470,12 @@ namespace zstl
 
         void swap(deque &d) noexcept
         {
-            std::swap(start_, d.start_);
-            std::swap(finish_, d.finish_);
-            std::swap(map_, d.map_);
-            std::swap(map_size_, d.map_size_);
-            std::swap(alloc_, d.alloc_);
-            std::swap(map_alloc_, d.map_alloc_);
+            zstl::swap(start_, d.start_);
+            zstl::swap(finish_, d.finish_);
+            zstl::swap(map_, d.map_);
+            zstl::swap(map_size_, d.map_size_);
+            zstl::swap(alloc_, d.alloc_);
+            zstl::swap(map_alloc_, d.map_alloc_);
         }
 
     private:

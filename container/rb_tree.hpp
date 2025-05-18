@@ -979,10 +979,10 @@ namespace zstl
 
         void swap(RBTree &rb_tree)
         {
-            std::swap(this->header_, rb_tree.header_);
-            std::swap(size_, rb_tree.size_);
-            std::swap(this->alloc_, rb_tree.alloc_);
-            std::swap(this->node_alloc_, rb_tree.node_alloc_);
+            zstl::swap(this->header_, rb_tree.header_);
+            zstl::swap(size_, rb_tree.size_);
+            zstl::swap(this->alloc_, rb_tree.alloc_);
+            zstl::swap(this->node_alloc_, rb_tree.node_alloc_);
         }
 
         // 清空节点

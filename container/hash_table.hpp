@@ -3,7 +3,7 @@
 #include <utility>
 #include "vector.hpp"
 #include "../iterator/reverse_iterator.hpp"
-
+#include"../algorithm/algo.hpp"
 namespace zstl
 {
     // 键提取器：从 value_type 中获取 key
@@ -428,9 +428,9 @@ namespace zstl
         void swap(HashTable &ht)
         {
             tables_.swap(ht.tables_);
-            std::swap(size_, ht.size_);
-            std::swap(alloc_, ht.alloc_);
-            std::swap(node_alloc_, ht.node_alloc_);
+            zstl::swap(size_, ht.size_);
+            zstl::swap(alloc_, ht.alloc_);
+            zstl::swap(node_alloc_, ht.node_alloc_);
         }
 
         // 扩容并重新哈希所有元素

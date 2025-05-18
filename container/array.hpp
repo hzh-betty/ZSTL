@@ -1,8 +1,8 @@
 #pragma once
 #include <cassert>
 #include <stdexcept>
-#include<initializer_list>
-#include"../iterator/reverse_iterator.hpp"
+#include <initializer_list>
+#include "../iterator/reverse_iterator.hpp"
 
 namespace zstl
 {
@@ -13,15 +13,15 @@ namespace zstl
     public:
         using iterator = T *;             // 可写迭代器
         using const_iterator = const T *; // 只读迭代器
-       
+
         // 反向迭代器
         using reverse_iterator = basic_reverse_iterator<iterator>;
         using const_reverse_iterator = basic_reverse_iterator<iterator>;
 
-        reverse_iterator rbegin()  { return reverse_iterator(end()); }
-        reverse_iterator rend()  { return reverse_iterator(begin()); }
-        const_reverse_iterator rbegin() const  { return const_reverse_iterator(end()); }
-        const_reverse_iterator rend() const  { return const_reverse_iterator(begin()); }
+        reverse_iterator rbegin() { return reverse_iterator(end()); }
+        reverse_iterator rend() { return reverse_iterator(begin()); }
+        const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+        const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
 
         // 返回指向第一个元素的迭代器
         iterator begin() noexcept { return data_; }
@@ -80,15 +80,15 @@ namespace zstl
         }
 
         array() = default;
-        array(const array&) = default;
-        array&operator=(const array&) = default;
+        array(const array &) = default;
+        array &operator=(const array &) = default;
         ~array() = default;
 
         array(std::initializer_list<T> il)
         {
             size_t i = 0;
             assert(il.size() <= N);
-            for(auto&e:il)
+            for (auto &e : il)
             {
                 data_[i++] = e;
             }

@@ -1,10 +1,10 @@
 #pragma once
 #include <iostream>
 #include <cassert>
-#include <memory>
 #include "../iterator/reverse_iterator.hpp"
 #include "../allocator/alloc.hpp"
 #include "../allocator/memory.hpp"
+#include "../algorithm/algo.hpp"
 
 namespace zstl
 {
@@ -162,7 +162,7 @@ namespace zstl
         using pointer = typename traits_allocator::pointer;
         using const_pointer = typename traits_allocator::const_pointer;
         using size_type = size_t;
-        
+
         // 针对节点类型的分配器重绑定
         using node_type = ListNode<T>;
         using node_allocator_type = typename traits_allocator::template rebind_alloc<node_type>;
@@ -332,10 +332,10 @@ namespace zstl
 
         void swap(list &rhs) noexcept
         {
-            std::swap(head_, rhs.head_);
-            std::swap(size_, rhs.size_);
-            std::swap(alloc_, rhs.alloc_);
-            std::swap(node_alloc_, rhs.node_alloc_);
+            zstl::swap(head_, rhs.head_);
+            zstl::swap(size_, rhs.size_);
+            zstl::swap(alloc_, rhs.alloc_);
+            zstl::swap(node_alloc_, rhs.node_alloc_);
         }
 
     private:
