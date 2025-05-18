@@ -22,6 +22,9 @@
 
 #include "test_alloc.hpp"
 
+#include"test_algo.hpp"
+#include"test_numeric.hpp"
+
 // 主函数：运行所有测试
 int main(int argc, char **argv)
 {
