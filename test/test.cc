@@ -24,6 +24,7 @@
 
 #include"test_algo.hpp"
 #include"test_numeric.hpp"
+#include"test_set_algo.hpp"
 
 // 主函数：运行所有测试
 int main(int argc, char **argv)
