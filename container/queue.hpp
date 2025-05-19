@@ -1,8 +1,7 @@
 #pragma once
-#include <iostream>
 #include "deque.hpp"
 #include "vector.hpp"
-#include <functional>
+#include "../functor/functional.hpp"
 #include "../algorithm/heap_algo.hpp"
 namespace zstl
 {
@@ -87,7 +86,7 @@ namespace zstl
     };
 
     /*优先级队列*/
-    template <typename T, typename Container = vector<T>, typename Compare = std::less<T>>
+    template <typename T, typename Container = vector<T>, typename Compare = zstl::less<T>>
     class priority_queue
     {
     public:

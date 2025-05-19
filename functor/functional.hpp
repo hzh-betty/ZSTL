@@ -174,7 +174,6 @@ namespace zstl
     {
         size_t operator()(const T &key) const
         {
-            static_assert(sizeof(T) == 0, "zstl::hash<T> not implemented for this type");
             return key;
         }
     };

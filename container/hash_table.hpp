@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include <utility>
 #include "vector.hpp"
 #include "../iterator/reverse_iterator.hpp"

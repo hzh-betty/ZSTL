@@ -1,21 +1,5 @@
 #pragma once
 #include "hash_table.hpp"
-namespace std
-{
-    template <>
-    struct hash<zstl::string>
-    {
-        size_t operator()(const zstl::string &s) const
-        {
-            size_t value = 0;
-            for (auto ch : s)
-            {
-                value = value * 131 + ch;
-            }
-            return value;
-        }
-    };
-}
 namespace zstl
 {
     // 空类型标记，用于模板元编程中区分unordered_set和map

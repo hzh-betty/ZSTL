@@ -1,5 +1,4 @@
 #pragma once
-#include <iostream>
 #include <cassert>
 #include "../iterator/reverse_iterator.hpp"
 #include "../allocator/alloc.hpp"
