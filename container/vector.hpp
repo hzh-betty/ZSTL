@@ -10,7 +10,7 @@ namespace zstl
     template <typename T, typename Alloc = alloc<T>>
     class vector
     {
-        static_assert(!std::is_same_v<bool, T>, "vector<bool> is abandoned in mystl");
+        static_assert(!std::is_same_v<bool, T>, "vector<bool> is abandoned in zstl");
 
     public:
         using allocator_type = Alloc;
@@ -149,11 +149,11 @@ namespace zstl
         }
 
         // 返回当前 vector 中存储的元素个数
-        size_type size() const { return finish_ - start_; }
+        [[nodiscard]] size_type size() const { return finish_ - start_; }
         // 返回当前分配的内存容量（单位：元素个数）
-        size_type capacity() const { return end_of_storage_ - start_; }
+        [[nodiscard]] size_type capacity() const { return end_of_storage_ - start_; }
         // 判断 vector 是否为空
-        bool empty() const { return size() == 0; }
+        [[nodiscard]] bool empty() const { return size() == 0; }
 
         // 为 vector 分配至少 n 个元素的存储空间（扩容操作）
         void reserve(size_type n)
@@ -304,5 +304,4 @@ namespace zstl
         iterator finish_ = nullptr;
         iterator end_of_storage_ = nullptr;
     };
-
-}; // namespace zstl
+} // namespace zstl

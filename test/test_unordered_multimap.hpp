@@ -146,4 +146,4 @@ namespace zstl
         EXPECT_DOUBLE_EQ(p->second, 3.14);
         EXPECT_EQ(m.count("pi"), 1u);
     }
-};
+}

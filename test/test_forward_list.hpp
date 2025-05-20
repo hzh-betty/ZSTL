@@ -105,9 +105,9 @@ namespace zstl
         lst.push_front(3); // 列表:3->2->1
         int expected[] = {3, 2, 1};
         int idx = 0;
-        for (auto it = lst.begin(); it != lst.end(); ++it)
+        for (int & it : lst)
         {
-            EXPECT_EQ(*it, expected[idx++]);
+            EXPECT_EQ(it, expected[idx++]);
         }
         EXPECT_EQ(idx, 3);
     }
@@ -123,9 +123,9 @@ namespace zstl
         forward_list<int> lst2(std::move(lst1));
         int expected[] = {3, 2, 1};
         int idx = 0;
-        for (auto it = lst2.begin(); it != lst2.end(); ++it)
+        for (int & it : lst2)
         {
-            EXPECT_EQ(*it, expected[idx++]);
+            EXPECT_EQ(it, expected[idx++]);
         }
         EXPECT_EQ(idx, 3);
 
@@ -143,9 +143,9 @@ namespace zstl
         lst2 = std::move(lst1);
         int expected[] = {3, 2, 1};
         int idx = 0;
-        for (auto it = lst2.begin(); it != lst2.end(); ++it)
+        for (int & it : lst2)
         {
-            EXPECT_EQ(*it, expected[idx++]);
+            EXPECT_EQ(it, expected[idx++]);
         }
         EXPECT_EQ(idx, 3);
     }
@@ -156,9 +156,9 @@ namespace zstl
         forward_list<int> lst = {1, 2, 3};
         int expected[] = {1, 2, 3};
         int idx = 0;
-        for (auto it = lst.begin(); it != lst.end(); ++it)
+        for (int & it : lst)
         {
-            EXPECT_EQ(*it, expected[idx++]);
+            EXPECT_EQ(it, expected[idx++]);
         }
         EXPECT_EQ(idx, 3);
     }
@@ -173,4 +173,4 @@ namespace zstl
         ++it;
         EXPECT_EQ(*it, 2);
     }
-};
+}

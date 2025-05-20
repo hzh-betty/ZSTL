@@ -100,10 +100,10 @@ namespace zstl
         }
         EXPECT_EQ(s.size(), 4u);
         int expected = 1;
-        for (auto it = s.begin(); it != s.end(); ++it)
+        for (int it : s)
         {
             // 遍历顺序应为升序
-            EXPECT_EQ(*it, expected++);
+            EXPECT_EQ(it, expected++);
         }
         EXPECT_EQ(expected, 5);
 
@@ -285,4 +285,4 @@ namespace zstl
         EXPECT_EQ(*result.first, 42);
         EXPECT_EQ(s.find(42), result.first);
     }
-}; // namespace zstl
+} // namespace zstl

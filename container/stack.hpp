@@ -9,13 +9,13 @@ namespace zstl
         stack() = default;
         ~stack() = default;
         // 移动构造函数
-        stack(stack &&other) 
+        stack(stack &&other) noexcept
             : con_(std::move(other.con_))
         {
         }
 
         // 移动赋值运算符
-        stack &operator=(stack &&other) 
+        stack &operator=(stack &&other) noexcept
         {
             if (this != &other)
             {
@@ -55,13 +55,13 @@ namespace zstl
         }
 
         // 判断是否为空
-        bool empty() const
+        [[nodiscard]] bool empty() const
         {
             return con_.empty();
         }
 
         // 获取大小
-        size_t size()
+        [[nodiscard]] size_t size()
         {
             return con_.size();
         }
@@ -69,4 +69,4 @@ namespace zstl
     private:
         Container con_;
     };
-};
+}

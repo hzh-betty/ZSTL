@@ -1,5 +1,5 @@
 # 设置CMake的最低版本要求
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.15)
 
 # 设置项目名称
 project(ZSTL)
@@ -14,8 +14,8 @@ include_directories(${GTEST_INCLUDE_DIRS})
 # 添加可执行文件
 add_executable(zstl_test test/test.cc)
 
-# 链接Google Test库和pthread库
-target_link_libraries(zstl_test ${GTEST_LIBRARIES} pthread)
+# 链接Google Test库
+target_link_libraries(zstl_test ${GTEST_LIBRARIES})
 
 # 添加测试
 enable_testing()

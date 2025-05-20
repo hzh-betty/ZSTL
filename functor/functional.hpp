@@ -267,7 +267,7 @@ namespace zstl
         // 调用接口，派生类需实现
         virtual R operator()(Args... args) const = 0;
         // 虚析构，保证多态删除安全
-        virtual ~invoker_base() {}
+        virtual ~invoker_base() = default;
         // 克隆自身（用于拷贝 function）
         virtual invoker_base *clone() const = 0;
     };
@@ -279,7 +279,7 @@ namespace zstl
         R (*func_)(Args...); // 保存函数指针
 
     public:
-        function_ptr_invoker(R (*func)(Args...)) : func_(func) {}
+        explicit function_ptr_invoker(R (*func)(Args...)) : func_(func) {}
 
         // 调用函数指针
         R operator()(Args... args) const override
@@ -333,7 +333,7 @@ namespace zstl
         MT C::*memptr_; // 保存成员指针
 
     public:
-        member_ptr_invoker(MT C::*memptr) : memptr_(memptr) {}
+        explicit member_ptr_invoker(MT C::*memptr) : memptr_(memptr) {}
 
         // 调用成员指针
         R operator()(Args... args) const override
@@ -355,7 +355,7 @@ namespace zstl
         mutable F f_; // mutable 允许const调用非const 函数
 
     public:
-        function_object_invoker(F f) : f_(f) {}
+        explicit function_object_invoker(F f) : f_(f) {}
 
         // 调用可调用对象
         R operator()(Args... args) const override
@@ -382,10 +382,10 @@ namespace zstl
 
     public:
         // 默认构造
-        function() noexcept {}
+        function() noexcept = default;
 
         // nullptr构造
-        function(nullptr_t fn) noexcept {}
+        explicit function(nullptr_t fn) noexcept {}
 
         // 普通函数指针构造
         function(R (*func)(Args...)) : invoker_(new function_ptr_invoker<R, Args...>(func)) {}
@@ -402,7 +402,7 @@ namespace zstl
         function(const function &x) : invoker_(x.invoker_ ? x.invoker_->clone() : 0) {}
 
         // 移动构造
-        function(function &&x) : invoker_(x.invoker_)
+        function(function &&x)  noexcept : invoker_(x.invoker_)
         {
             x.invoker_ = nullptr;
         }
@@ -481,13 +481,15 @@ namespace zstl
             delete invoker_;
         }
     };
-    template <int I>
-    struct placeholder_t
-    {
-    };
+
 
     namespace placeholders
     {
+        template <int I>
+        struct placeholder_t
+        {
+        };
+
         inline constexpr placeholder_t<1> _1{};
         inline constexpr placeholder_t<2> _2{};
         inline constexpr placeholder_t<3> _3{};
@@ -534,7 +536,7 @@ namespace zstl
     }
     // 2. 占位符，从调用参数元组中取第 I-1 个
     template <int I, typename Tuple>
-    inline auto select_arg(placeholder_t<I> &, Tuple &tpl)
+    inline auto select_arg(placeholders::placeholder_t<I> &, Tuple &tpl)
     {
         return std::get<I - 1>(tpl);
     }

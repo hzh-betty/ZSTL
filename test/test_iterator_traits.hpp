@@ -185,4 +185,4 @@ namespace zstl
         zstl::advance(p, -2);
         EXPECT_EQ(*p, 8);
     }
-};
+}

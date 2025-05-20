@@ -102,5 +102,4 @@ namespace zstl
         // 验证输出结果
         EXPECT_EQ(oss.str(), "1-2-3-4-");
     }
-
-};
+}

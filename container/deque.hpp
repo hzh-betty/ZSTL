@@ -37,7 +37,7 @@ namespace zstl
         }
 
         // 构造函数：传入新的缓冲区节点指针
-        DequeIterator(map_pointer newnode)
+        explicit DequeIterator(map_pointer newnode)
         {
             set_node(newnode); // 切换到该节点
             cur_ = first_;     // 当前指向缓冲区起始
@@ -155,7 +155,7 @@ namespace zstl
 
         // 比较运算符，只比较 node_ 和 cur_
         bool operator==(const Self &s) const { return cur_ == s.cur_; }
-        bool operator!=(const Self &s) const { return !(*this == s); }
+        bool operator!=(const Self &s) const { return cur_ != s.cur_; }
         bool operator<(const Self &s) const
         {
             return node_ == s.node_ ? cur_ < s.cur_ : node_ < s.node_;
@@ -221,7 +221,7 @@ namespace zstl
 
         // 列表初始化
         deque(std::initializer_list<T> il, const allocator_type &alloc = allocator_type())
-            : alloc_(alloc), map_alloc_(alloc_)
+            : alloc_(alloc), map_alloc_(alloc_),map_size_(0)
         {
             create_map(il.size());
             iterator tmp = start_;
@@ -234,7 +234,7 @@ namespace zstl
 
         // 指定大小和初始值
         deque(size_type n, const value_type &val, const allocator_type &alloc = allocator_type())
-            : alloc_(alloc), map_alloc_(alloc_)
+            : alloc_(alloc), map_alloc_(alloc_),map_size_(0)
         {
             create_map(n);
             for (auto it = start_; it != finish_; ++it)
@@ -245,7 +245,7 @@ namespace zstl
 
         // 拷贝构造：允许有状态分配器策略
         deque(const deque &other)
-            : alloc_(other.alloc_), map_alloc_(alloc_)
+            : alloc_(other.alloc_), map_alloc_(alloc_),map_size_(0)
         {
             create_map(other.size());
             zstl::copy(other.begin(), other.end(), start_);
@@ -301,8 +301,8 @@ namespace zstl
         }
 
         // 容量与访问
-        bool empty() const noexcept { return start_ == finish_; }
-        size_type size() const noexcept { return finish_ - start_; }
+        [[nodiscard]] bool empty() const noexcept { return start_ == finish_; }
+        [[nodiscard]] size_type size() const noexcept { return finish_ - start_; }
         reference front()
         {
             assert(!empty());

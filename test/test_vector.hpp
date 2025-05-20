@@ -177,9 +177,9 @@ namespace zstl
             vec.push_back(i);
         }
         int expected = 0;
-        for (auto it = vec.begin(); it != vec.end(); ++it)
+        for (int & it : vec)
         {
-            EXPECT_EQ(*it, expected++);
+            EXPECT_EQ(it, expected++);
         }
     }
     // 测试移动构造
@@ -232,4 +232,4 @@ namespace zstl
         EXPECT_EQ(v.back(), 42);
         EXPECT_EQ(v.size(), 1);
     }
-};
+}

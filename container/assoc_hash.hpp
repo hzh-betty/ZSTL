@@ -47,9 +47,9 @@ namespace zstl
 
     public:
         /* 迭代器访问 */
-        iterator begin() noexcept { return hash_.begin(); }
+        iterator begin() noexcept { return iterator(hash_.begin()); }
         const_iterator begin() const noexcept { return hash_.begin(); }
-        iterator end() noexcept { return hash_.end(); }
+        iterator end() noexcept { return iterator(hash_.end()); }
         const_iterator end() const noexcept { return hash_.end(); }
 
     public:
@@ -79,8 +79,8 @@ namespace zstl
         }
 
         /* 容量查询 */
-        bool empty() const noexcept { return hash_.empty(); }
-        size_t size() const noexcept { return hash_.size(); }
+        [[nodiscard]] bool empty() const noexcept { return hash_.empty(); }
+        [[nodiscard]] size_t size() const noexcept { return hash_.size(); }
 
         /* 查找操作 */
         iterator find(const key_type &k) const { return hash_.find(k); }
@@ -193,4 +193,4 @@ namespace zstl
     private:
         hash_type hash_; // 底层哈希表实现
     };
-};
+}

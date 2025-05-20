@@ -112,17 +112,16 @@ namespace zstl
             ms.insert(i);
         bool seen[5] = {false};
         int cnt = 0;
-        for (auto it = ms.begin(); it != ms.end(); ++it)
+        for (int v : ms)
         {
-            int v = *it;
             EXPECT_GE(v, 0);
             EXPECT_LT(v, 5);
             seen[v] = true;
             cnt++;
         }
         EXPECT_EQ(cnt, 5);
-        for (int i = 0; i < 5; ++i)
-            EXPECT_TRUE(seen[i]);
+        for (bool i : seen)
+            EXPECT_TRUE(i);
     }
 
     // 常量版本接口测试
@@ -134,9 +133,9 @@ namespace zstl
         EXPECT_FALSE(cms.empty());
         EXPECT_EQ(cms.size(), 1);
         EXPECT_NE(cms.find(42), cms.end());
-        auto range = cms.equal_range(42);
+        cms.equal_range(42);
         EXPECT_EQ(++cms.begin(), cms.end());
-    };
+    }
 
     // 测试按键删除所有元素
     TEST(UnorderedMultisetTest, EraseByKey)
@@ -213,4 +212,4 @@ namespace zstl
         EXPECT_EQ(*it, 42);
         EXPECT_EQ(ums.count(42), 1u);
     }
-}; // namespace zstl
+} // namespace zstl

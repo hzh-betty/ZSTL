@@ -13,7 +13,7 @@ namespace zstl
 
         // 完美转发构造函数
         template <typename... Args>
-        ForwardListNode(Args &&...args) : data_(std::forward<Args>(args)...)
+         ForwardListNode(Args &&...args) : data_(std::forward<Args>(args)...)
         {
         }
     };
@@ -35,7 +35,7 @@ namespace zstl
         Node *node_; // 当前指向的节点
 
         // 构造：可指定起始节点，默认为空
-        ForwardListIterator(Node *node = nullptr)
+        explicit ForwardListIterator(Node *node = nullptr)
             : node_(node)
         {
         }
@@ -257,7 +257,7 @@ namespace zstl
         }
 
         // 判断是否为空（仅检查首节点是否存在）
-        bool empty() const { return header_->next_ == nullptr; }
+        [[nodiscard]] bool empty() const { return header_->next_ == nullptr; }
 
     private:
         // 创建节点：分配内存并调用构造
@@ -281,4 +281,4 @@ namespace zstl
         node_allocator_type node_alloc_; // 针对节点重绑定的分配器
         Node *header_;                   // 哨兵头节点，不存储有效数据
     };
-}; // namespace zstl
+} // namespace zstl

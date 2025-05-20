@@ -88,7 +88,7 @@ namespace zstl
         base_ptr base_; // 当前迭代器指向的节点
 
         // 构造函数，传入节点指针
-        ListIterator(base_ptr node) : base_(node)
+        explicit ListIterator(base_ptr node) : base_(node)
         {
         }
 
@@ -176,10 +176,10 @@ namespace zstl
         using difference_type = typename iterator_traits<iterator>::difference_type;
 
         // --------------- 迭代器接口 ---------------
-        iterator begin() { return head_->next_; }
-        iterator end() { return head_; }
-        const_iterator begin() const { return head_->next_; }
-        const_iterator end() const { return head_; }
+        iterator begin() { return iterator(head_->next_); }
+        iterator end() { return iterator(head_); }
+        const_iterator begin() const { return iterator(head_->next_); }
+        const_iterator end() const { return iterator(head_); }
         reverse_iterator rbegin() { return reverse_iterator(end()); }
         reverse_iterator rend() { return reverse_iterator(begin()); }
         const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
@@ -188,14 +188,14 @@ namespace zstl
     public:
         // 默认构造：可传入自定义分配器，默认为 allocator_type()
         list(const allocator_type &alloc = allocator_type())
-            : alloc_(alloc), node_alloc_(alloc_) // 同步节点分配器
+            : alloc_(alloc), node_alloc_(alloc_),size_(0) // 同步节点分配器
         {
             empty_init(); // 初始化空链表（头节点自环）
         }
 
         // 填充构造：n 个 val，使用相同的分配器参数
         list(size_type n, const T &val = T(), const allocator_type &alloc = allocator_type())
-            : alloc_(alloc), node_alloc_(alloc_)
+            : alloc_(alloc), node_alloc_(alloc_),size_(0)
         {
             fill_init(n, val);
         }
@@ -203,14 +203,14 @@ namespace zstl
         // 范围构造：基于输入迭代器区间构造链表
         template <typename InputIter>
         list(InputIter first, InputIter last, const allocator_type &alloc = allocator_type())
-            : alloc_(alloc), node_alloc_(alloc_)
+            : alloc_(alloc), node_alloc_(alloc_),size_(0)
         {
             range_init(first, last);
         }
 
         // initializer_list 构造
         list(std::initializer_list<T> il, const allocator_type &alloc = allocator_type())
-            : alloc_(alloc), node_alloc_(alloc_)
+            : alloc_(alloc), node_alloc_(alloc_),size_(0)
         {
             range_init(il.begin(), il.end());
         }
@@ -275,8 +275,8 @@ namespace zstl
         }
 
         // --------------- 容量相关 ---------------
-        bool empty() const noexcept { return size_ == 0; }
-        size_type size() const noexcept { return size_; }
+        [[nodiscard]] bool empty() const noexcept { return size_ == 0; }
+        [[nodiscard]] size_type size() const noexcept { return size_; }
 
         // --------------- 元素访问 ---------------
         reference front() { return *begin(); }

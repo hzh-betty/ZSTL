@@ -94,15 +94,15 @@ namespace zstl
             us.insert(i * 2);
 
         unordered_set<int> collected;
-        for (auto it = us.begin(); it != us.end(); ++it)
+        for (int u : us)
         {
-            collected.insert(*it);
+            collected.insert(u);
         }
 
         int cnt = 0;
-        for (auto it = collected.begin(); it != collected.end(); ++it)
+        for (int it : collected)
         {
-            EXPECT_EQ(*it, 2 * (cnt++));
+            EXPECT_EQ(it, 2 * (cnt++));
         }
 
         // 验证所有元素都被遍历
@@ -232,4 +232,4 @@ namespace zstl
         EXPECT_EQ(*result.first, 42);
         EXPECT_EQ(us.find(42), result.first);
     }
-};
+}

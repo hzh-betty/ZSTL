@@ -31,7 +31,7 @@ namespace zstl
         // 类型转换构造函数
         template <typename U,
                   typename = std::enable_if_t<!std::is_same_v<U, T>>>
-        alloc(const alloc<U> &) noexcept
+         alloc(const alloc<U> &) noexcept
         {
             // 无状态分配器无需复制任何状态
         }
@@ -131,4 +131,4 @@ namespace zstl
             return false;
         }
     };
-}; // namespace zstl
+} // namespace zstl

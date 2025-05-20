@@ -59,7 +59,7 @@ namespace zstl
         using pointer = Ptr;
         using reference = Ref;
 
-        RBTreeIterator(Node *node)
+        explicit RBTreeIterator(Node *node)
             : node_(node)
         {
         }
@@ -724,20 +724,20 @@ namespace zstl
 
         iterator begin()
         {
-            return this->header_->left_;
+            return iterator(this->header_->left_);
         }
         const_iterator begin() const
         {
-            return this->header_->left_;
+            return iterator(this->header_->left_);
         }
 
         iterator end()
         {
-            return this->header_;
+            return iterator(this->header_);
         }
         const_iterator end() const
         {
-            return this->header_;
+            return iterator(this->header_);
         }
 
         // 反向迭代器
@@ -903,7 +903,7 @@ namespace zstl
             {
                 ++size_;
             }
-            return p;
+            return {iterator(p.first), p.second};
         }
 
         // emplace 接口（支持重复插入）
@@ -911,26 +911,26 @@ namespace zstl
         iterator emplace_duplicate(Args &&...args)
         {
             ++size_;
-            return this->template insert_impl<false>(std::forward<Args>(args)...);
+            return iterator(this->template insert_impl<false>(std::forward<Args>(args)...));
         }
 
         // 查找
         iterator find(const K &val) const
         {
-            return this->find_impl(val);
+            return iterator(this->find_impl(val));
         }
 
         // 删除接口
         iterator erase(const_iterator pos)
         {
-            iterator next = pos.node_;
+            iterator next = iterator(pos.node_);
             ++next;
             // 计算中序后继，作为返回值
             Node *target = pos.node_; // 待删除节点
             Node *successor = next.node_;
             successor = this->erase_impl(target, successor);
             --size_;
-            return successor;
+            return iterator(successor);
         }
         iterator erase(const_iterator first, const_iterator last)
         {
@@ -943,7 +943,7 @@ namespace zstl
 
             // 否则逐节点删除，因为删除存在替换删除逻辑
             // 如果last被替换，就会出现一直first!=last的情况
-            const_iterator ret = last.node_;
+            const_iterator ret = const_iterator(last.node_);
             while (first != last)
             {
                 const_iterator cur = first++;

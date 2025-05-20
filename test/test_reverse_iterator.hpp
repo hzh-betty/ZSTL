@@ -148,4 +148,4 @@ namespace zstl
         EXPECT_EQ(idx, a.max_size());
     }
 
-};
+}

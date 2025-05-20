@@ -50,7 +50,7 @@ namespace zstl
     // 测试用例3：测试使用自定义比较器(greater)
     TEST(PriorityQueueTest, CustomComparatorGreater)
     {
-        priority_queue<int, zstl::vector<int>,std::greater<int>> pq;
+        priority_queue<int, zstl::vector<int>,zstl::greater<int>> pq;
 
         pq.push(10);
         pq.push(20);
@@ -120,7 +120,7 @@ namespace zstl
     // 测试用例7：测试自定义比较器与空队列的结合
     TEST(PriorityQueueTest, CustomComparatorWithEmptyQueue)
     {
-        priority_queue<int, zstl::deque<int>, std::less<int>> pq;
+        priority_queue<int, zstl::deque<int>, zstl::less<int>> pq;
 
         pq.push(42);
 

@@ -10,6 +10,7 @@ namespace zstl
     template <typename T, size_t N>
     class array
     {
+        static_assert(N!= 0, "array size must be non-zero");
     public:
         using iterator = T *;             // 可写迭代器
         using const_iterator = const T *; // 只读迭代器
@@ -94,9 +95,9 @@ namespace zstl
             }
         }
         // 返回数组大小
-        constexpr size_t max_size() const noexcept { return N; }
+        [[nodiscard]] constexpr size_t max_size() const noexcept { return N; }
         // 判断数组是否为空（N==0）
-        constexpr bool empty() const noexcept { return N == 0; }
+        [[nodiscard]] constexpr bool empty() const noexcept { return N == 0; }
 
     private:
         T data_[N]; // 静态分配的存储空间

@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include "../algorithm/heap_algo.hpp"
 #include "../container/vector.hpp"
+#include"../functor/functional.hpp"
 namespace zstl
 {
     // push_heap 测试
@@ -16,7 +17,7 @@ namespace zstl
         // 自定义比较器（最小堆）
         vector<int> v2{2, 4, 6, 8, 10};
         v2.push_back(1);
-        zstl::push_heap(v2.begin(), v2.end(), std::greater<int>());
+        zstl::push_heap(v2.begin(), v2.end(), zstl::greater<int>());
         EXPECT_EQ(v2.front(), 1);
     }
 
@@ -33,10 +34,10 @@ namespace zstl
 
         // 自定义比较器（最小堆）
         vector<int> v2{1, 4, 6, 8, 10, 2};
-        zstl::make_heap(v2.begin(), v2.end(), std::greater<int>());
-        zstl::pop_heap(v2.begin(), v2.end(), std::greater<int>());
+        zstl::make_heap(v2.begin(), v2.end(), zstl::greater<int>());
+        zstl::pop_heap(v2.begin(), v2.end(), zstl::greater<int>());
         EXPECT_EQ(v2.back(), 1);
-        EXPECT_TRUE(zstl::is_heap(v2.begin(), v2.end() - 1, std::greater<int>()));
+        EXPECT_TRUE(zstl::is_heap(v2.begin(), v2.end() - 1, zstl::greater<int>()));
     }
 
     // make_heap 测试
@@ -48,8 +49,8 @@ namespace zstl
 
         // 自定义比较器（最小堆）
         vector<int> v2{3, 1, 4, 1, 5, 9, 2};
-        zstl::make_heap(v2.begin(), v2.end(), std::greater<int>());
-        EXPECT_TRUE(zstl::is_heap(v2.begin(), v2.end(), std::greater<int>()));
+        zstl::make_heap(v2.begin(), v2.end(), zstl::greater<int>());
+        EXPECT_TRUE(zstl::is_heap(v2.begin(), v2.end(), zstl::greater<int>()));
     }
 
     // sort_heap 测试
@@ -64,8 +65,8 @@ namespace zstl
 
         // 自定义比较器（最小堆，升序排列）
         vector<int> v2{3, 1, 4, 1, 5, 9, 2};
-        zstl::make_heap(v2.begin(), v2.end(), std::greater<int>());
-        zstl::sort_heap(v2.begin(), v2.end(), std::greater<int>());
+        zstl::make_heap(v2.begin(), v2.end(), zstl::greater<int>());
+        zstl::sort_heap(v2.begin(), v2.end(), zstl::greater<int>());
         for (size_t i = 1; i < v2.size(); ++i)
             EXPECT_LE(v2[i], v2[i - 1]);
     }

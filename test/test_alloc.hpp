@@ -34,13 +34,14 @@ namespace zstl
     {
         constexpr size_t N = 5;
         zstl::string *arr = alloc<zstl::string>::allocate(N);
-        ASSERT_NE(arr, nullptr) << "allocate(N) 返回 nullptr";
+        ASSERT_NE(arr, nullptr) << "allocate(N) 不返回 nullptr";
 
         // 构造多个 zstl::string
         for (size_t i = 0; i < N; ++i)
         {
-            alloc<zstl::string>::construct(&arr[i], "test" + (i + 'a'));
-            EXPECT_EQ(arr[i], "test" + (i + 'a'));
+            zstl::string tmp = "test" ;
+            alloc<zstl::string>::construct(&arr[i], tmp.c_str());
+            EXPECT_STREQ(arr[i].c_str(), tmp.c_str());
         }
 
         // 范围销毁
@@ -83,7 +84,7 @@ namespace zstl
         double *p = alloc<double>::allocate(count);
         ASSERT_NE(p, nullptr);
         for (size_t i = 0; i < count; ++i)
-            p[i] = i * 1.0;
+            p[i] = static_cast<double>(i) * 1.0;
         EXPECT_DOUBLE_EQ(p[count - 1], (count - 1) * 1.0);
         alloc<double>::deallocate(p, count);
     }
@@ -121,4 +122,4 @@ namespace zstl
         SUCCEED();
     }
 
-};
+}

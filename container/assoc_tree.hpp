@@ -55,10 +55,10 @@ namespace zstl
         const_iterator end() const noexcept { return tree_.end(); }
 
         // 反向迭代器
-        reverse_iterator rbegin() { return tree_.rbegin(); }
-        reverse_iterator rend() { return tree_.rend(); }
-        const_reverse_iterator rbegin() const { return tree_.rbegin(); }
-        const_reverse_iterator rend() const { return tree_.rend(); }
+        reverse_iterator rbegin() { return reverse_iterator(tree_.rbegin()); }
+        reverse_iterator rend() { return reverse_iterator(tree_.rend()); }
+        const_reverse_iterator rbegin() const { return reverse_iterator(tree_.rbegin()); }
+        const_reverse_iterator rend() const { return reverse_iterator(tree_.rend()); }
 
     public:
         // 默认构造/拷贝/移动构造函数
@@ -88,8 +88,8 @@ namespace zstl
         }
 
         /* 容量查询 */
-        bool empty() const noexcept { return tree_.empty(); }
-        size_t size() const noexcept { return tree_.size(); }
+        [[nodiscard]] bool empty() const noexcept { return tree_.empty(); }
+        [[nodiscard]] size_t size() const noexcept { return tree_.size(); }
 
         /* 查找操作 */
         iterator find(const key_type &k) const { return tree_.find(k); }
@@ -208,4 +208,4 @@ namespace zstl
     private:
         tree_type tree_; // 底层红黑树实现
     };
-};
+}

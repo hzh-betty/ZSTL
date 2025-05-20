@@ -137,5 +137,4 @@ namespace zstl
         q.pop();
         EXPECT_TRUE(q.empty());
     }
-
 }

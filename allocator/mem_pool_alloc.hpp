@@ -165,4 +165,4 @@ namespace zstl
         inline static char *end_free_ = nullptr;               // 内存池终点
         inline static size_type heap_size_ = 0;                 // 从系统（malloc）累计获取的字节数
     };
-};
+}

@@ -20,7 +20,7 @@ namespace zstl
         explicit input_reverse_iterator(It x) : current_(x) {}
         // 普通迭代器构造const迭代器
         template <typename U, typename = std::enable_if_t<std::is_convertible_v<U, It>>>
-        input_reverse_iterator(const input_reverse_iterator<U> &other)
+        explicit input_reverse_iterator(const input_reverse_iterator<U> &other)
             : current_(other.base()) {}
 
         It base() const
@@ -59,7 +59,7 @@ namespace zstl
 
         bool operator!=(const self &a) const
         {
-            return !(*this == a);
+            return current_ != a.current_;
         }
 
     protected:
@@ -86,7 +86,7 @@ namespace zstl
         explicit bidirectional_reverse_iterator(It x) : Base(x) {}
         // 普通迭代器构造const迭代器
         template<typename U, typename = std::enable_if_t<std::is_convertible_v<U, It>>>
-        bidirectional_reverse_iterator(const bidirectional_reverse_iterator<U>& other)
+        explicit bidirectional_reverse_iterator(const bidirectional_reverse_iterator<U>& other)
             : Base(other.base()) {}
 
         self &operator--()
@@ -121,9 +121,10 @@ namespace zstl
     public:
         random_access_reverse_iterator() = default;
         explicit random_access_reverse_iterator(It x) : Base(x) {}
-                // 普通迭代器构造const迭代器
+
+        // 普通迭代器构造const迭代器
         template<typename U, typename = std::enable_if_t<std::is_convertible_v<U, It>>>
-        random_access_reverse_iterator(const random_access_reverse_iterator<U>& other)
+        explicit random_access_reverse_iterator(const random_access_reverse_iterator<U>& other)
             : Base(other.base()) {}
 
         bool operator<(const self &b) const
@@ -179,4 +180,4 @@ namespace zstl
     using basic_reverse_iterator = std::conditional_t<is_random_access_iterator_v<It>,
                                                       random_access_reverse_iterator<It>,
                                                       std::conditional_t<is_bidirectional_iterator_v<It>, bidirectional_reverse_iterator<It>, input_reverse_iterator<It>>>;
-};
+}

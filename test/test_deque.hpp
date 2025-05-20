@@ -230,4 +230,4 @@ namespace zstl
         EXPECT_EQ(d.back(), 42);
         EXPECT_EQ(d.size(), 1);
     }
-};
+}

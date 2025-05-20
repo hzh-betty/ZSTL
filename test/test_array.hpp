@@ -10,9 +10,6 @@ namespace zstl
         EXPECT_EQ(a.max_size(), 5u); // max_size 同 size
         EXPECT_FALSE(a.empty());     // N!=0 时非空
 
-        array<int, 0> b;
-        EXPECT_EQ(b.max_size(), 0u);
-        EXPECT_TRUE(b.empty()); // N==0 时为空
     }
 
     // 测试 fill() 和 front(), back()
@@ -61,9 +58,9 @@ namespace zstl
         array<int, 3> a;
         a.fill(9);
         size_t count = 0;
-        for (auto it = a.begin(); it != a.end(); ++it)
+        for (int & it : a)
         {
-            EXPECT_EQ(*it, 9);
+            EXPECT_EQ(it, 9);
             ++count;
         }
         EXPECT_EQ(count, a.max_size()); // 遍历次数应等于 size
@@ -75,9 +72,9 @@ namespace zstl
         const array<char, 4> a = []()
         { array<char,4> t; t.fill('x'); return t; }();
         size_t cnt = 0;
-        for (auto it = a.begin(); it != a.end(); ++it)
+        for (char it : a)
         {
-            EXPECT_EQ(*it, 'x');
+            EXPECT_EQ(it, 'x');
             ++cnt;
         }
         EXPECT_EQ(cnt, a.max_size());
@@ -92,4 +89,4 @@ namespace zstl
         EXPECT_EQ(a[1], 2);
         EXPECT_EQ(a[2], 3);
     }
-}; // namespace zstl
+} // namespace zstl

@@ -3,7 +3,6 @@
 #include <gtest/gtest.h>
 namespace zstl
 {
-
     // 测试 Fixture
     class UnorderedMapTest : public ::testing::Test
     {
@@ -165,4 +164,4 @@ namespace zstl
         auto it = um.find(5);
         EXPECT_EQ(it, result.first);
     }
-};
+}

@@ -13,7 +13,7 @@ namespace zstl
     struct Multiplier
     {
         int factor;
-        Multiplier(int f) : factor(f) {}
+        explicit Multiplier(int f) : factor(f) {}
         int operator()(int x) const { return x * factor; }
     };
 
@@ -22,7 +22,7 @@ namespace zstl
     {
         int data = 0;
         int add(int x) { return data + x; }
-        int add_const(int x) const { return data + x + 100; }
+        [[nodiscard]] int add_const(int x) const { return data + x + 100; }
         static int static_add(int x, int y) { return x + y + 1000; }
     };
 

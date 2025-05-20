@@ -183,4 +183,4 @@ namespace zstl
         auto it = m.find(5);
         EXPECT_EQ(it, result.first);
     }
-};
+}

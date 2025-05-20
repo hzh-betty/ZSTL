@@ -239,9 +239,9 @@ namespace zstl
         }
 
         // 大小与容量
-        size_type size() const noexcept { return size_; }
-        size_type capacity() const noexcept { return capacity_; }
-        bool empty() const noexcept { return size_ == 0; }
+        [[nodiscard]] size_type size() const noexcept { return size_; }
+        [[nodiscard]] size_type capacity() const noexcept { return capacity_; }
+        [[nodiscard]] bool empty() const noexcept { return size_ == 0; }
 
         // 预分配内存
         void reserve(size_type n)
@@ -451,4 +451,4 @@ namespace zstl
 
     using string = basic_string<char>;
     using wstring = basic_string<wchar_t>;
-}; // namespace zstl
+} // namespace zstl

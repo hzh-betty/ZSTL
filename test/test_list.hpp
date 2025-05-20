@@ -291,4 +291,4 @@ namespace zstl
         EXPECT_EQ(l.back(), 42);
         EXPECT_EQ(l.size(), 1);
     }
-};
+}

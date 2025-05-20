@@ -28,7 +28,7 @@ namespace zstl
         for (auto x : v)
             EXPECT_EQ(x, 7);
 
-        zstl::array<char, 4> arr;
+        zstl::array<char, 4> arr{};
         fill_n(arr.begin(), arr.max_size(), 'a');
         for (auto c : arr)
             EXPECT_EQ(c, 'a');

@@ -7,7 +7,7 @@ namespace zstl
     TEST(MultiMapTest, EmptyContainer)
     {
         multimap<int, int> m;          // 新建空 multimap
-        EXPECT_TRUE(m.empty());        // 应为空 :contentReference[oaicite:7]{index=7}
+        EXPECT_TRUE(m.empty());        // 应为空
         EXPECT_EQ(m.size(), 0u);       // 大小为 0
         EXPECT_EQ(m.begin(), m.end()); // begin 应等于 end
     }
@@ -181,4 +181,4 @@ namespace zstl
         EXPECT_EQ(it->second, 100);
         EXPECT_EQ(mm.count(1), 1u);
     }
-}; // namespace zstl
+} // namespace zstl

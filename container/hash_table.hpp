@@ -63,7 +63,7 @@ namespace zstl
             : node_(node), ht_(ht) {}
 
         // 允许不同类型的迭代器转换
-        HashTableIterator(const HashTableIterator<Key, Value, Value &, Value *, HashFunc, CompareFunc, Allocator> &it)
+         HashTableIterator(const HashTableIterator<Key, Value, Value &, Value *, HashFunc, CompareFunc, Allocator> &it)
             : node_(it.node_), ht_(it.ht_) {}
 
         // 获取节点数据
@@ -405,8 +405,8 @@ namespace zstl
             return {it_first, it_last};
         }
 
-        bool empty() const { return size_ == 0; }
-        size_t size() const { return size_; }
+        [[nodiscard]] bool empty() const { return size_ == 0; }
+        [[nodiscard]] size_t size() const { return size_; }
 
         // 清空所有节点
         void clear()

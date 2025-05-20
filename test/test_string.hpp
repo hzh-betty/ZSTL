@@ -115,4 +115,4 @@ namespace zstl
         EXPECT_EQ(w.substr(0, 2), wstring(L"你好"));
     }
 
-};
+}

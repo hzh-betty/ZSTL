@@ -10,8 +10,8 @@ namespace zstl
     {
         using char_type = CharT;
         using traits_type = Traits;
-        using istream_type = std::basic_istream<CharT, Traits>;
-        using self = istream_iterator<T, CharT, Traits, Dist>;
+        using istream_type = std::basic_istream<char_type, Traits>;
+        using self = istream_iterator<T, char_type, Traits, Dist>;
 
     public:
         // 必需的五个类型
@@ -67,7 +67,7 @@ namespace zstl
         }
         bool operator!=(const self &other) const
         {
-            return !(*this == other);
+            return at_end_ != other.at_end_;
         }
 
     private:
@@ -83,8 +83,8 @@ namespace zstl
     {
         using char_type = CharT;
         using traits_type = Traits;
-        using ostream_type = std::basic_ostream<CharT, Traits>;
-        using self = ostream_iterator<T, CharT, Traits>;
+        using ostream_type = std::basic_ostream<char_type, Traits>;
+        using self = ostream_iterator<T, char_type, Traits>;
 
     public:
         // 必需的五个类型
@@ -119,4 +119,4 @@ namespace zstl
         ostream_type *out_;
         const char *delim_;
     };
-};
+}

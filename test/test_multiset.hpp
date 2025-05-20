@@ -93,7 +93,6 @@ namespace zstl
 
         // erase(iterator)：删除第一个元素
         auto it = ms.begin();
-        int val = *it;
         auto nextIt = ms.erase(it);
         EXPECT_EQ(*nextIt, 20);
         EXPECT_EQ(ms.size(), 3);
@@ -233,4 +232,4 @@ namespace zstl
         EXPECT_EQ(*it, 42);
         EXPECT_EQ(ms.count(42), 1u);
     }
-};
+}
