@@ -348,7 +348,7 @@ namespace zstl
         }
     };
 
-    // 仿函数/可调用对象/
+    // 仿函数/可调用对象/lambda适配器/bind_t
     template <typename R, typename F, typename... Args>
     class function_object_invoker : public invoker_base<R, Args...>
     {
@@ -459,7 +459,7 @@ namespace zstl
         // 交换
         function &swap(function &rhs) noexcept
         {
-            std::swap(invoker_, rhs.invoker_);
+            zstl::swap(invoker_, rhs.invoker_);
             return *this;
         }
 
