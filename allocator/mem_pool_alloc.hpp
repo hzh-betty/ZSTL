@@ -105,7 +105,7 @@ namespace zstl
 
                 // 向系统申请新内存：申请 2×total_bytes + heap_size_/16（增长策略）
                 size_type bytes_to_get = 2 * total_bytes + round_up(heap_size_ >> 4);
-                start_free_ = static_cast<char *>(std::malloc(bytes_to_get));
+                start_free_ = static_cast<char *>(malloc(bytes_to_get));
                 if (!start_free_)
                 {
                     // 情形 4：系统 malloc 失败，尝试从 larger free_list 拿块
@@ -163,6 +163,6 @@ namespace zstl
         inline static Obj *free_list_[NFREELISTS] = {nullptr}; // 自由链表
         inline static char *start_free_ = nullptr;             // 内存池起始
         inline static char *end_free_ = nullptr;               // 内存池终点
-        inline static size_type heap_size_ = 0;                 // 从系统（malloc）累计获取的字节数
+        inline static size_type heap_size_ = 0;                // 从系统（malloc）累计获取的字节数
     };
 }
